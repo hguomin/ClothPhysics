@@ -224,3 +224,7 @@ _Pvt_Extensions
 
 # FAKE - F# Make
 .fake/
+
+# Jakob ADDED STUFF
+*.zip
+*.txt
