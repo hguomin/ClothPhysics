@@ -5,18 +5,7 @@
 
 Mesh::Mesh(Vertex* vertices, unsigned int numVertices, unsigned int* indices, unsigned int numIndices)
 {
-	IndexedModel model;
-
-	for (unsigned int i = 0; i < numVertices; i++)
-	{
-		model.positions.push_back(*vertices[i].GetPos());
-		model.texCoords.push_back(*vertices[i].GetTexCoord());
-		model.normals.push_back(*vertices[i].GetNormal());
-	}
-	for (unsigned int i = 0; i < numVertices; i++)
-	{
-		model.indices.push_back(indices[i]);
-	}
+	IndexedModel model = CreateIndexedModel(vertices, numVertices, indices, numIndices);
 
 	InitMesh(model);
 }
@@ -94,4 +83,21 @@ void Mesh::InitMesh(const IndexedModel& model)
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_vertexArrayBuffers[INDEX_VB]);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, model.indices.size() * sizeof(model.indices[0]), &model.indices[0], GL_STATIC_DRAW); //sizeof(vertecies[0]) gives size of vertex
 
+}
+
+IndexedModel Mesh::CreateIndexedModel(Vertex* vertices, unsigned int numVertices, unsigned int* indices, unsigned int numIndices)
+{
+	IndexedModel model;
+
+	for (unsigned int i = 0; i < numVertices; i++)
+	{
+		model.positions.push_back(*vertices[i].GetPos());
+		model.texCoords.push_back(*vertices[i].GetTexCoord());
+		model.normals.push_back(*vertices[i].GetNormal());
+	}
+	for (unsigned int i = 0; i < numVertices; i++)
+	{
+		model.indices.push_back(indices[i]);
+	}
+	return model;
 }

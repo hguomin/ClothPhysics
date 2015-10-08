@@ -10,6 +10,7 @@
 #include "Keyboard.h"
 #include "Mouse.h"
 #include "Skybox.h"
+#include "Cloth.h"
 #include <iostream>
 
 /*https://www.youtube.com/watch?v=RqRxhY6iLto */
@@ -29,6 +30,9 @@ int main(int argc, char ** argv[])
 	Transform transform;
 	Keyboard keyboard;
 	Mouse mouse;
+
+	Cloth cloth(3, 3);
+	cloth.print();
 
 	float counter = 0.0f;
 	Mesh monkey("./models/monkey3.obj");

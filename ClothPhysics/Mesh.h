@@ -40,7 +40,7 @@ public:
 	void Draw();
 	void Draw() const;
 protected:
-
+	IndexedModel CreateIndexedModel(Vertex* vertices, unsigned int numVertices, unsigned int* indices, unsigned int numIndices);
 private:
 	enum
 	{
