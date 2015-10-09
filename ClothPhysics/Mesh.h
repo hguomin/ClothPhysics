@@ -39,8 +39,20 @@ public:
 
 	void Draw();
 	void Draw() const;
+
 protected:
 	IndexedModel CreateIndexedModel(Vertex* vertices, unsigned int numVertices, unsigned int* indices, unsigned int numIndices);
+
+	void UploadToGPU(Vertex* vertices, unsigned int numVertices);
+
+	void StandardDraw();
+
+	void UpdateModel();
+
+	void InitMesh(const IndexedModel& model);
+
+	IndexedModel m_model;
+
 private:
 	enum
 	{
@@ -52,8 +64,7 @@ private:
 		NUM_BUFFERS
 	};
 
-	void InitMesh(const IndexedModel& model);
-
+	
 	GLuint m_vertexArrayObject;
 	GLuint m_vertexArrayBuffers[NUM_BUFFERS];
 	unsigned int m_drawCount;

@@ -11,6 +11,7 @@
 #include "Mouse.h"
 #include "Skybox.h"
 #include "Cloth.h"
+#include "GridMesh.h"
 #include <iostream>
 
 /*https://www.youtube.com/watch?v=RqRxhY6iLto */
@@ -31,8 +32,7 @@ int main(int argc, char ** argv[])
 	Keyboard keyboard;
 	Mouse mouse;
 
-	Cloth cloth(3, 3);
-	cloth.print();
+	Cloth cloth(4, 4);
 
 	float counter = 0.0f;
 	Mesh monkey("./models/monkey3.obj");
@@ -68,9 +68,9 @@ int main(int argc, char ** argv[])
 		shader.Use();
 		shader.Update(transform, camera);
 		
-		texture.Use();
-		monkey.Draw();
-		//box.Draw();
+		//texture.Use();
+		//monkey.Draw();
+		cloth.Draw();
 		
 		display.Update();
 

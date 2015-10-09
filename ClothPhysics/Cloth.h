@@ -4,7 +4,7 @@
 
 #include <vector>
 #include "glm\glm.hpp"
-#include "Mesh.h"
+#include "GridMesh.h"
 
 enum class SpringType { SHEAR, BEND, STRUCT };
 
@@ -18,7 +18,7 @@ struct Spring
 	SpringType type;
 };
 
-class Cloth
+class Cloth : public GridMesh
 {
 public:
 	Cloth(unsigned int width, unsigned int height);
@@ -31,9 +31,6 @@ public:
 private:
 	unsigned int m_width;
 	unsigned int m_height;
-
-	std::vector<glm::vec3> m_pPos;
-	std::vector<glm::vec3> m_prevPPos;
 
 	std::vector<Spring> m_springs;
 

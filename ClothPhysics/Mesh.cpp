@@ -1,16 +1,22 @@
 #include "Mesh.h"
 #include <vector>
 #include <string>
+#include <iostream>
 
 
 Mesh::Mesh(Vertex* vertices, unsigned int numVertices, unsigned int* indices, unsigned int numIndices)
 {
-	IndexedModel model = CreateIndexedModel(vertices, numVertices, indices, numIndices);
+	IndexedModel m_model = CreateIndexedModel(vertices, numVertices, indices, numIndices);
 
-	InitMesh(model);
+	InitMesh(m_model);
 }
 
 Mesh::Mesh(Vertex* vertices, unsigned int numVertices)
+{
+	UploadToGPU(vertices, numVertices);
+}
+
+void Mesh::UploadToGPU(Vertex* vertices, unsigned int numVertices)
 {
 	m_drawCount = numVertices;
 
@@ -29,8 +35,8 @@ Mesh::Mesh(Vertex* vertices, unsigned int numVertices)
 
 Mesh::Mesh(const std::string& fileName)
 {
-	IndexedModel model = OBJModel(fileName).ToIndexedModel();
-	InitMesh(model);
+	m_model = OBJModel(fileName).ToIndexedModel();
+	InitMesh(m_model);
 }
 
 
@@ -41,6 +47,16 @@ Mesh::~Mesh()
 
 
 void Mesh::Draw()
+{
+	glBindVertexArray(m_vertexArrayObject);
+
+	glDrawElements(GL_TRIANGLES, m_drawCount, GL_UNSIGNED_INT, 0);
+	//glDrawArrays(GL_TRIANGLES, 0, m_drawCount);
+
+	glBindVertexArray(0);
+}
+
+void Mesh::StandardDraw()
 {
 	glBindVertexArray(m_vertexArrayObject);
 
@@ -100,4 +116,9 @@ IndexedModel Mesh::CreateIndexedModel(Vertex* vertices, unsigned int numVertices
 		model.indices.push_back(indices[i]);
 	}
 	return model;
+}
+
+void Mesh::UpdateModel()
+{
+	InitMesh(m_model);
 }

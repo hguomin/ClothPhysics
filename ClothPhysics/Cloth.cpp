@@ -5,15 +5,7 @@ Cloth::Cloth(unsigned int width, unsigned int height) : m_width(width), m_height
 {
 	float spK = 1.0f; //spring constant
 	float dpK = 1.0f; //damp constant
-	//init positions of the cloth particles
-	for (unsigned int y = 0; y < height; y++)
-	{
-		for (unsigned int x = 0; x < width; x++)
-		{
-			m_pPos.push_back(glm::vec3(x, y, 0));
-			m_prevPPos.push_back(glm::vec3(x, y, 0));
-		}
-	}
+	InitGridMesh(height, width);
 	//adding the springs
 
 	//structural horizontal
@@ -65,8 +57,6 @@ Cloth::Cloth(unsigned int width, unsigned int height) : m_width(width), m_height
 Cloth::~Cloth()
 {
 	m_springs.clear();
-	m_pPos.clear();
-	m_prevPPos.clear();
 }
 
 void Cloth::AddSpring(int pos_a, int pos_b, float spring_const, float damp_const, SpringType type)
@@ -74,7 +64,7 @@ void Cloth::AddSpring(int pos_a, int pos_b, float spring_const, float damp_const
 	Spring temp;
 	temp.pos1 = pos_a;
 	temp.pos2 = pos_b;
-	glm::vec3 delta = m_pPos[pos_a] - m_pPos[pos_b];
+	glm::vec3 delta = GetPositionOf(pos_a) -GetPositionOf(pos_b);
 	temp.rest_length = glm::length(delta);
 	temp.spring_constant = spring_const;
 	temp.damp = damp_const;
