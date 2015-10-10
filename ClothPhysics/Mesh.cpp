@@ -4,36 +4,14 @@
 #include <iostream>
 
 
-Mesh::Mesh(Vertex* vertices, unsigned int numVertices, unsigned int* indices, unsigned int numIndices)
+Mesh::Mesh(Vertex* vertices, unsigned int numVertices, unsigned int* indices, unsigned int numIndices, GLenum DRAWTYPE) : m_DRAWTYPE(DRAWTYPE)
 {
 	IndexedModel m_model = CreateIndexedModel(vertices, numVertices, indices, numIndices);
 
 	InitMesh(m_model);
 }
 
-Mesh::Mesh(Vertex* vertices, unsigned int numVertices)
-{
-	UploadToGPU(vertices, numVertices);
-}
-
-void Mesh::UploadToGPU(Vertex* vertices, unsigned int numVertices)
-{
-	m_drawCount = numVertices;
-
-	glGenVertexArrays(1, &m_vertexArrayObject);
-	glBindVertexArray(m_vertexArrayObject);
-
-	glGenBuffers(NUM_BUFFERS, m_vertexArrayBuffers);
-	glBindBuffer(GL_ARRAY_BUFFER, m_vertexArrayBuffers[POSITION_VB]);
-	glBufferData(GL_ARRAY_BUFFER, numVertices * sizeof(vertices[0]), vertices, GL_STATIC_DRAW);
-
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-
-	glBindVertexArray(0);
-}
-
-Mesh::Mesh(const std::string& fileName)
+Mesh::Mesh(const std::string& fileName, GLenum DRAWTYPE) : m_DRAWTYPE(DRAWTYPE)
 {
 	m_model = OBJModel(fileName).ToIndexedModel();
 	InitMesh(m_model);
@@ -66,39 +44,48 @@ void Mesh::StandardDraw()
 	glBindVertexArray(0);
 }
 
-void Mesh::InitMesh(const IndexedModel& model)
+void Mesh::UploadToGPU()
 {
-	m_drawCount = model.indices.size();
-
-	glGenVertexArrays(1, &m_vertexArrayObject);
 	glBindVertexArray(m_vertexArrayObject);
-
-	glGenBuffers(NUM_BUFFERS, m_vertexArrayBuffers);
 	//Position
 	glBindBuffer(GL_ARRAY_BUFFER, m_vertexArrayBuffers[POSITION_VB]);
-	glBufferData(GL_ARRAY_BUFFER, model.positions.size() * sizeof(model.positions[0]), &model.positions[0], GL_STATIC_DRAW); //sizeof(vertices[0]) gives size of vertex
+	glBufferData(GL_ARRAY_BUFFER, m_model.positions.size() * sizeof(m_model.positions[0]), &m_model.positions[0], m_DRAWTYPE); //sizeof(vertices[0]) gives size of vertex
 
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
 	//Texture
 	glBindBuffer(GL_ARRAY_BUFFER, m_vertexArrayBuffers[TEXCOORD_VB]);
-	glBufferData(GL_ARRAY_BUFFER, model.texCoords.size() * sizeof(model.texCoords[0]), &model.texCoords[0], GL_STATIC_DRAW); //sizeof(texCoords[0]) gives size of vertex
+	glBufferData(GL_ARRAY_BUFFER, m_model.texCoords.size() * sizeof(m_model.texCoords[0]), &m_model.texCoords[0], m_DRAWTYPE); //sizeof(texCoords[0]) gives size of vertex
 
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, 0);
 
 	//Normal
 	glBindBuffer(GL_ARRAY_BUFFER, m_vertexArrayBuffers[NORMAL_VB]);
-	glBufferData(GL_ARRAY_BUFFER, model.normals.size() * sizeof(model.normals[0]), &model.normals[0], GL_STATIC_DRAW); //sizeof(vertices[0]) gives size of vertex
+	glBufferData(GL_ARRAY_BUFFER, m_model.normals.size() * sizeof(m_model.normals[0]), &m_model.normals[0], m_DRAWTYPE); //sizeof(vertices[0]) gives size of vertex
 
 	glEnableVertexAttribArray(2);
 	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
 	//Indices
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_vertexArrayBuffers[INDEX_VB]);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, model.indices.size() * sizeof(model.indices[0]), &model.indices[0], GL_STATIC_DRAW); //sizeof(vertecies[0]) gives size of vertex
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, m_model.indices.size() * sizeof(m_model.indices[0]), &m_model.indices[0], m_DRAWTYPE); //sizeof(vertecies[0]) gives size of vertex
 
+}
+
+void Mesh::InitMesh(const IndexedModel& model, bool updateModel, GLenum DRAWTYPE)
+{
+	m_model = model;
+	m_drawCount = model.indices.size(); //makes sure that that we have the correct draw count
+	m_DRAWTYPE = DRAWTYPE;
+
+	if (!updateModel)
+	{
+		GenerateBufferAndVertexArray();
+	}
+
+	UploadToGPU();
 }
 
 IndexedModel Mesh::CreateIndexedModel(Vertex* vertices, unsigned int numVertices, unsigned int* indices, unsigned int numIndices)
@@ -118,7 +105,13 @@ IndexedModel Mesh::CreateIndexedModel(Vertex* vertices, unsigned int numVertices
 	return model;
 }
 
-void Mesh::UpdateModel()
+void Mesh::UpdateModel(GLenum DRAWTYPE)
 {
-	InitMesh(m_model);
+	InitMesh(m_model,true);
+}
+
+void Mesh::GenerateBufferAndVertexArray()
+{
+	glGenVertexArrays(1, &m_vertexArrayObject);
+	glGenBuffers(NUM_BUFFERS, m_vertexArrayBuffers);
 }
