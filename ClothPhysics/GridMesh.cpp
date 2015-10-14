@@ -41,15 +41,15 @@ void GridMesh::InitGridMesh(unsigned int height, unsigned int width)
 
 GridMesh::~GridMesh()
 {
+
 }
 
 void GridMesh::Draw()
 {
-	glDisable(GL_CULL_FACE);
-	m_model.positions.at(0).x += 0.001;
+	glDisable(GL_DEPTH_TEST);
 	UpdateModel(GL_DYNAMIC_DRAW);
 	StandardDraw();
-	glEnable(GL_CULL_FACE);
+	glEnable(GL_DEPTH_TEST);
 }
 
 glm::vec3 GridMesh::GetPositionOf(unsigned int x, unsigned int y)
@@ -60,4 +60,15 @@ glm::vec3 GridMesh::GetPositionOf(unsigned int x, unsigned int y)
 glm::vec3 GridMesh::GetPositionOf(unsigned int a)
 {
 	return m_model.positions.at(a);
+}
+
+std::vector<glm::vec3> GridMesh::GetPositions()
+{
+	return m_model.positions;
+}
+
+void GridMesh::UpdatePositions(std::vector<glm::vec3> &pos)
+{
+	assert(pos.size() == m_model.positions.size());
+	m_model.positions = pos;
 }
