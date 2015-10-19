@@ -5,19 +5,9 @@
 #include <vector>
 #include "glm\glm.hpp"
 #include "GridMesh.h"
+#include "Spring.h"
 
 enum class IntegrationType {VERLET};
-enum class SpringType { SHEAR, BEND, STRUCT };
-
-struct Spring
-{
-	int pos1;
-	int pos2;
-	float rest_length;
-	float spring_constant;
-	float damp;
-	SpringType type;
-};
 
 class Cloth : public GridMesh
 {

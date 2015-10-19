@@ -10,8 +10,8 @@
 #include "Keyboard.h"
 #include "Mouse.h"
 #include "Skybox.h"
-#include "Cloth.h"
 #include "GridMesh.h"
+#include "Cloth2.h"
 #include <iostream>
 
 /*https://www.youtube.com/watch?v=RqRxhY6iLto */
@@ -32,7 +32,7 @@ int main(int argc, char ** argv[])
 	Keyboard keyboard;
 	Mouse mouse;
 
-	Cloth cloth(5, 5,1);
+	Cloth2 cloth(5, 5, 5, 5);
 
 	float counter = 0.0f;
 	Mesh monkey("./models/monkey3.obj");
@@ -70,9 +70,11 @@ int main(int argc, char ** argv[])
 		
 		//texture.Use();
 		//monkey.Draw();
-		cloth.Draw();
-		
+		cloth.Update();
+		//cloth.print();
+
 		display.Update();
+
 
 		counter += 0.001f;
 	}

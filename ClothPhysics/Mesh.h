@@ -5,28 +5,7 @@
 #include "glm\glm.hpp"
 #include <GL\glew.h>
 #include "obj_loader.h"
-
-class Vertex
-{
-public:
-	Vertex(const glm::vec3& pos, const glm::vec2& texCoord, const glm::vec3& normal = glm::vec3(0, 0, 0))
-	{
-		this->m_pos = pos;
-		this->m_texCoord = texCoord;
-		this->m_normal = normal;
-	}
-
-	glm::vec3* GetPos() { return &m_pos; }
-	glm::vec2* GetTexCoord() { return &m_texCoord; }
-	glm::vec3* GetNormal() { return &m_normal; }
-protected:
-
-private:
-	glm::vec3 m_pos;
-	glm::vec2 m_texCoord;
-	glm::vec3 m_normal;
-};
-
+#include "Vertex.h"
 
 class Mesh
 {

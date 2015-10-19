@@ -94,7 +94,7 @@ IndexedModel Mesh::CreateIndexedModel(Vertex* vertices, unsigned int numVertices
 
 	for (unsigned int i = 0; i < numVertices; i++)
 	{
-		model.positions.push_back(*vertices[i].GetPos());
+		model.positions.push_back(*vertices[i].GetPosition());
 		model.texCoords.push_back(*vertices[i].GetTexCoord());
 		model.normals.push_back(*vertices[i].GetNormal());
 	}
