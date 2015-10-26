@@ -15,8 +15,8 @@ public:
 	Mesh(const std::string& fileName, GLenum DRAWTYPE = GL_STATIC_DRAW);
 	~Mesh();
 
-	void Draw();
-	void Draw() const;
+	void Draw(GLenum DRAWTYPE = GL_TRIANGLES);
+	void Draw(GLenum DRAWTYPE = GL_TRIANGLES) const;
 
 protected:
 	IndexedModel CreateIndexedModel(Vertex* vertices, unsigned int numVertices, unsigned int* indices, unsigned int numIndices);

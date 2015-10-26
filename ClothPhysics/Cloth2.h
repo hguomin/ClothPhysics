@@ -21,6 +21,8 @@ public:
 
 	void Update();
 
+	void Wind(glm::vec3 direction);
+
 	void print();
 private:
 	float m_width;
@@ -32,6 +34,8 @@ private:
 	std::vector<std::shared_ptr<Spring>> m_constraints;
 
 	std::vector<glm::vec3> ExtractPositions();
+	glm::vec3 CalculateTriangleNormal(Particle* p1, Particle* p2, Particle* p3);
+	void AddWind(Particle* p1, Particle* p2, Particle* p3, glm::vec3 direction);
 };
 
 #endif //CLOTH2_H

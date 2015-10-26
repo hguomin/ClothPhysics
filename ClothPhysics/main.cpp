@@ -32,7 +32,7 @@ int main(int argc, char ** argv[])
 	Keyboard keyboard;
 	Mouse mouse;
 
-	Cloth2 cloth(5, 5, 5, 5);
+	Cloth2 cloth(3, 3, 3, 3);
 
 	float counter = 0.0f;
 	Mesh monkey("./models/monkey3.obj");

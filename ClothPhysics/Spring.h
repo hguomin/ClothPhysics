@@ -22,6 +22,7 @@ public:
 		glm::vec3 halfCorrection = 0.5f*correction;
 		p1.get()->addPosition(halfCorrection);
 		p2.get()->addPosition(-halfCorrection);
+		//reset the forces and acceleration working on the particles
 	}
 private:
 	std::shared_ptr<Particle> p1;
@@ -29,7 +30,6 @@ private:
 	SpringType type;
 	float rest_length;
 	float spring_constant;
-	float damp;
 	
 };
 

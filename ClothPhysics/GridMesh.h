@@ -21,6 +21,8 @@ public:
 	unsigned int GetHeight(){ return m_height; }
 	unsigned int GetWidth() { return m_width; }
 
+	void print();
+
 protected:
 	void InitGridMesh(unsigned int height, unsigned int width);
 
