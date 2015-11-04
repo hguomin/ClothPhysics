@@ -15,12 +15,13 @@ void GridMesh::InitGridMesh(unsigned int height, unsigned int width)
 {
 	IndexedModel model;
 
+	//generate vertex positions
 	for (unsigned int j = 0; j < height; j++)
 	{
 		for (unsigned int i = 0; i < width; i++)
 		{
 			model.positions.push_back(glm::vec3(i, j, 0));
-			model.texCoords.push_back(glm::vec2((float)i / (float)width, (float)j / (float)height));
+			model.texCoords.push_back(glm::vec2((float)i / (float)(width - 1), (float)j / (float)(height - 1)));
 			model.normals.push_back(glm::vec3(0, 1, 0));
 		}
 	}
@@ -34,8 +35,8 @@ void GridMesh::InitGridMesh(unsigned int height, unsigned int width)
 			model.indices.push_back((j + 1)*m_height + i);
 
 			model.indices.push_back(j*m_height + i + 1);
-			model.indices.push_back((j + 1)*m_height + i);
 			model.indices.push_back((j + 1)*m_height + i + 1);
+			model.indices.push_back((j + 1)*m_height + i);
 		}
 	}
 
@@ -52,10 +53,8 @@ GridMesh::~GridMesh()
 void GridMesh::Draw()
 {
 	glDisable(GL_DEPTH_TEST);
-	glDisable(GL_CULL_FACE);
 	Mesh::UpdateModel(GL_DYNAMIC_DRAW);
-	Mesh::Draw();
-	glEnable(GL_CULL_FACE);
+	Mesh::Draw(GL_TRIANGLES);
 	glEnable(GL_DEPTH_TEST);
 }
 
@@ -82,5 +81,14 @@ void GridMesh::UpdatePositions(std::vector<glm::vec3> &pos)
 
 void GridMesh::print()
 {
-	std::cout << m_model.positions.end()->x << " " << m_model.positions.end()->y << " " << m_model.positions.end()->z << std::endl;
+	glm::vec3 temp;
+	for (unsigned int i = 0; i < m_height; i++)
+	{
+		for (unsigned int j = 0; j < m_width; j++)
+		{
+			temp = GetPositionOf(j, i);
+			std::cout << "For (" << j << "," << i << ") Pos: x: " << temp.x << ", y: " << temp.y << ", z: " << temp.z << "\n";
+		}
+	}
+	std::cout << std::endl;
 }

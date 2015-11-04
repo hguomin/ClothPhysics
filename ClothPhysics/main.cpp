@@ -13,8 +13,15 @@
 #include "GridMesh.h"
 #include "Cloth2.h"
 #include <iostream>
+#include <algorithm>
 
 /*https://www.youtube.com/watch?v=RqRxhY6iLto */
+
+#define DESIRED_FPS 60.0f
+#define MAX_PHYSICS_STEP 6
+#define MS_PER_SECOND 1000.0f
+#define DESIRED_FRAME_TIME (MS_PER_SECOND/ DESIRED_FPS)
+#define MAX_DELTA_TIME 0.5f
 
 
 int main(int argc, char ** argv[])
@@ -32,7 +39,7 @@ int main(int argc, char ** argv[])
 	Keyboard keyboard;
 	Mouse mouse;
 
-	Cloth2 cloth(3, 3, 3, 3);
+	Cloth2 cloth(10, 10, 10, 10);
 
 	float counter = 0.0f;
 	Mesh monkey("./models/monkey3.obj");
@@ -40,9 +47,17 @@ int main(int argc, char ** argv[])
 
 	std::cout << "init complete" << std::endl;
 
+	float previousTicks = SDL_GetTicks();
 
+	glm::vec3 wind(0);
 	while (!display.IsClosed())
 	{
+		//time handling
+		float currentTicks = SDL_GetTicks();
+		float frameTime = currentTicks - previousTicks;
+		previousTicks = currentTicks;
+		float totalDeltaTime = frameTime / DESIRED_FRAME_TIME;
+
 		display.Clear(1, 0, 1, 1);
 
 		SDL_Event e;
@@ -62,6 +77,11 @@ int main(int argc, char ** argv[])
 		const Uint8* currentKeyStates = SDL_GetKeyboardState(NULL);
 
 		keyboard.HandleEvent(currentKeyStates, camera);
+
+		if (currentKeyStates[SDL_SCANCODE_O])
+		{
+			wind.z += 0.01f;
+		}
 		
 		sky.Draw(transform, camera);
 
@@ -70,8 +90,21 @@ int main(int argc, char ** argv[])
 		
 		//texture.Use();
 		//monkey.Draw();
-		cloth.Update();
-		//cloth.print();
+
+		//Physics handling semi-fixed timestep
+		int physicSteps = 0;
+		/*
+		while (totalDeltaTime > 0 && physicSteps < MAX_PHYSICS_STEP)
+		{
+			float dt = std::min(totalDeltaTime, MAX_DELTA_TIME);
+			cloth.Update(dt, wind);
+
+			totalDeltaTime -= dt;
+			physicSteps++;
+		}
+		*/
+		cloth.Update(0.01f, wind);
+		cloth.Draw();
 
 		display.Update();
 

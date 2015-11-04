@@ -9,6 +9,8 @@
 #include "Particle.h"
 #include "GridMesh.h"
 
+#define GRAVITY -0.81f
+
 class Cloth2 : public GridMesh
 {
 public:
@@ -16,12 +18,10 @@ public:
 	~Cloth2();
 
 	std::shared_ptr<Particle> getParticleAt(unsigned int x, unsigned int y);
-	void TimeStep();
+	void TimeStep(float dt);
 	void AddForce(glm::vec3& force);
 
-	void Update();
-
-	void Wind(glm::vec3 direction);
+	void Update(float dt, glm::vec3 wind);
 
 	void print();
 private:
@@ -32,10 +32,10 @@ private:
 	void makeConstraint(std::shared_ptr<Particle> p1, std::shared_ptr<Particle> p2, SpringType type);
 	std::vector<std::shared_ptr<Particle>> m_particles;
 	std::vector<std::shared_ptr<Spring>> m_constraints;
-
+	void Wind(glm::vec3 direction);
 	std::vector<glm::vec3> ExtractPositions();
-	glm::vec3 CalculateTriangleNormal(Particle* p1, Particle* p2, Particle* p3);
-	void AddWind(Particle* p1, Particle* p2, Particle* p3, glm::vec3 direction);
+	glm::vec3 CalculateTriangleNormal(std::shared_ptr<Particle> p1, std::shared_ptr<Particle> p2, std::shared_ptr<Particle> p3);
+	void AddWind(std::shared_ptr<Particle> p1, std::shared_ptr<Particle> p2, std::shared_ptr<Particle> p3, glm::vec3 direction);
 };
 
 #endif //CLOTH2_H

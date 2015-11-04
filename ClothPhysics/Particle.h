@@ -22,10 +22,10 @@ public:
 	void setLastPosition(glm::vec3 position) { m_lastPosition = position; }
 
 	float getMass() { return m_mass; }
-	glm::vec3* getVelocity() { return &m_velocity; }
-	glm::vec3* getAcceleration() { return &m_acceleration; }
-	glm::vec3* getPosition() { return Vertex::GetPosition(); }
-	glm::vec3* getLastPosition() { return &m_lastPosition; }
+	glm::vec3 getVelocity() { return m_velocity; }
+	glm::vec3 getAcceleration() { return m_acceleration; }
+	glm::vec3 getPosition() { return *Vertex::GetPosition(); }
+	glm::vec3 getLastPosition() { return m_lastPosition; }
 
 	bool Movable() const { return m_movable; }
 	void makeUnmovable() { m_movable = false; }
