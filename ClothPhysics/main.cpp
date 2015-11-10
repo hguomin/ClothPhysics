@@ -12,16 +12,19 @@
 #include "Skybox.h"
 #include "GridMesh.h"
 #include "Cloth2.h"
+
 #include <iostream>
 #include <algorithm>
+#include <stdlib.h>
+#include <time.h>
 
 /*https://www.youtube.com/watch?v=RqRxhY6iLto */
 
-#define DESIRED_FPS 60.0f
+#define DESIRED_FPS 120.0f
 #define MAX_PHYSICS_STEP 6
 #define MS_PER_SECOND 1000.0f
 #define DESIRED_FRAME_TIME (MS_PER_SECOND/ DESIRED_FPS)
-#define MAX_DELTA_TIME 0.5f
+#define MAX_DELTA_TIME 0.1f
 
 
 int main(int argc, char ** argv[])
@@ -48,8 +51,9 @@ int main(int argc, char ** argv[])
 	std::cout << "init complete" << std::endl;
 
 	float previousTicks = SDL_GetTicks();
+	srand(time(NULL));
 
-	glm::vec3 wind(0);
+	glm::vec3 wind(0,0,0);
 	while (!display.IsClosed())
 	{
 		//time handling
@@ -77,14 +81,30 @@ int main(int argc, char ** argv[])
 		const Uint8* currentKeyStates = SDL_GetKeyboardState(NULL);
 
 		keyboard.HandleEvent(currentKeyStates, camera);
-
+		float amount = 1.0f;
 		if (currentKeyStates[SDL_SCANCODE_O])
 		{
-			wind.z += 0.01f;
+			wind.z += amount;
 		}
-		
-		sky.Draw(transform, camera);
+		if (currentKeyStates[SDL_SCANCODE_I])
+		{
+			wind.z -= amount;
+		}
+		if (currentKeyStates[SDL_SCANCODE_L])
+		{
+			wind.x += amount;
+		}
+		if (currentKeyStates[SDL_SCANCODE_K])
+		{
+			wind.x -= amount;
+		}
+		if (currentKeyStates[SDL_SCANCODE_J])
+		{
+			wind = glm::vec3(0);
+		}
 
+		sky.Draw(transform, camera);
+		
 		shader.Use();
 		shader.Update(transform, camera);
 		
@@ -93,7 +113,7 @@ int main(int argc, char ** argv[])
 
 		//Physics handling semi-fixed timestep
 		int physicSteps = 0;
-		/*
+		
 		while (totalDeltaTime > 0 && physicSteps < MAX_PHYSICS_STEP)
 		{
 			float dt = std::min(totalDeltaTime, MAX_DELTA_TIME);
@@ -102,8 +122,7 @@ int main(int argc, char ** argv[])
 			totalDeltaTime -= dt;
 			physicSteps++;
 		}
-		*/
-		cloth.Update(0.01f, wind);
+		//cloth.Update(0.01f, wind);
 		cloth.Draw();
 
 		display.Update();

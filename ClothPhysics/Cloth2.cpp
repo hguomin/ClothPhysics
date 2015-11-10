@@ -18,9 +18,10 @@ Cloth2::Cloth2(float width, float height, unsigned int particles_width, unsigned
 		{
 			glm::vec3 temp = glm::vec3(
 				width*((float)x / (float)particles_width),
-				-height*((float)y / (float)particles_height),
-				0.0f);
+				0.0f,
+				-height*((float)y / (float)particles_height));
 			getParticleAt(x, y)->setPosition(temp);
+			getParticleAt(x, y)->setLastPosition(temp);
 		}
 	}
 	//create constraints
@@ -107,18 +108,22 @@ std::vector<glm::vec3> Cloth2::ExtractPositions()
 
 void Cloth2::TimeStep(float dt)
 {
+	ForceConstraints();
+	for (auto it = m_particles.cbegin(); it != m_particles.cend(); it++)
+	{
+		(*it)->timeStep(dt, 0.1f); //this could go wrong
+	}
+	
+}
 
-	for (unsigned int i = 0; i < 15; i++) //number of times we want to iterate over the constraints
+void Cloth2::ForceConstraints()
+{
+	for (unsigned int i = 0; i < 3; i++) //number of times we want to iterate over the constraints
 	{
 		for (auto it = m_constraints.cbegin(); it != m_constraints.cend(); it++)
 		{
 			(*it)->SatisfyConstraints();
 		}
-	}
-
-	for (auto it = m_particles.cbegin(); it != m_particles.cend(); it++)
-	{
-		(*it)->timeStep(dt, 1.0f); //this could go wrong
 	}
 }
 
@@ -133,8 +138,13 @@ void Cloth2::AddForce(glm::vec3 &force)
 void Cloth2::Update(float dt, glm::vec3 wind)
 {
 	AddForce(glm::vec3(0, GRAVITY, 0));
-	Wind(wind);
+	//Wind(wind);
+	std::shared_ptr<Particle> temp = getParticleAt((m_particles_width - 1)/2, (m_particles_height - 1)/2);
+	temp->addForce(wind);
 	TimeStep(dt);
+
+	BallCollision(glm::vec3(5,-5.0f,-5),1.0f);
+
 	GridMesh::UpdatePositions(ExtractPositions());
 }
 
@@ -180,6 +190,19 @@ void Cloth2::Wind(glm::vec3 direction)
 		{
 			AddWind(getParticleAt(x, y), getParticleAt(x + 1, y), getParticleAt(x, y + 1),direction);
 			AddWind(getParticleAt(x + 1, y), getParticleAt(x, y + 1), getParticleAt(x + 1, y + 1), direction);
+		}
+	}
+}
+
+void Cloth2::BallCollision(glm::vec3 position, float radius)
+{
+	for each (std::shared_ptr<Particle> particle in m_particles)
+	{
+		glm::vec3 forceVector = particle->getPosition() - position;
+		if (glm::length(forceVector) < radius)
+		{
+			forceVector = (forceVector / glm::length(forceVector))* radius;
+			particle->setPosition(position + forceVector);
 		}
 	}
 }

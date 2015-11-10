@@ -53,9 +53,11 @@ GridMesh::~GridMesh()
 void GridMesh::Draw()
 {
 	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_CULL_FACE);
 	Mesh::UpdateModel(GL_DYNAMIC_DRAW);
 	Mesh::Draw(GL_TRIANGLES);
 	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
 }
 
 glm::vec3 GridMesh::GetPositionOf(unsigned int x, unsigned int y)
