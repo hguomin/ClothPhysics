@@ -123,6 +123,7 @@ void Cloth2::ForceConstraints()
 		for (auto it = m_constraints.cbegin(); it != m_constraints.cend(); it++)
 		{
 			(*it)->SatisfyConstraints();
+			//(*it)->InternalForces();
 		}
 	}
 }
@@ -143,7 +144,7 @@ void Cloth2::Update(float dt, glm::vec3 wind)
 	temp->addForce(wind);
 	TimeStep(dt);
 
-	BallCollision(glm::vec3(5,-5.0f,-5),1.0f);
+	BallCollision(glm::vec3(5,-5.0f,-5),3.0f);
 
 	GridMesh::UpdatePositions(ExtractPositions());
 }
@@ -178,8 +179,13 @@ void Cloth2::AddWind(std::shared_ptr<Particle> p1, std::shared_ptr<Particle> p2,
 	glm::vec3 d = glm::normalize(normal);
 	glm::vec3 force = normal*glm::dot(d, direction);
 	p1->addForce(force);
+	p1->addNormal(d);
+	
 	p2->addForce(force);
+	p2->addNormal(d);
+	
 	p3->addForce(force);
+	p3->addNormal(d);
 }
 
 void Cloth2::Wind(glm::vec3 direction)

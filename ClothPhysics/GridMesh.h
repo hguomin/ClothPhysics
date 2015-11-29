@@ -15,6 +15,8 @@ public:
 	glm::vec3 GetPositionOf(unsigned int x, unsigned int y);
 	glm::vec3 GetPositionOf(unsigned int a);
 
+	void UpdateNormals();
+
 	std::vector<glm::vec3> GetPositions();
 	void UpdatePositions(std::vector<glm::vec3> &position);
 
@@ -27,6 +29,8 @@ protected:
 	void InitGridMesh(unsigned int height, unsigned int width);
 
 private:
+	void CalculateNormals();
+	void UpdateTextureCoords();
 	unsigned int m_height;
 	unsigned int m_width;
 };

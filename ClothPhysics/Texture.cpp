@@ -19,13 +19,15 @@ Texture::Texture(const std::string& fileName)
 	glGenTextures(1, &m_texture);
 	glBindTexture(GL_TEXTURE_2D, m_texture);
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR); //if texture is too large
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR); //if texture is too small
 
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, imageData);
+
+	StopUse();
 
 	stbi_image_free(imageData);
 }
@@ -48,6 +50,11 @@ void Texture::Use(unsigned int unit)
 	assert(unit >= 0 && unit <= 31 && m_texture);
 	glActiveTexture(GL_TEXTURE0 + unit);
 	glBindTexture(GL_TEXTURE_2D, m_texture);
+}
+
+void Texture::StopUse(unsigned int unit)
+{
+	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 CubemapTexture::CubemapTexture(

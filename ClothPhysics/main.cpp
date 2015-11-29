@@ -13,10 +13,15 @@
 #include "GridMesh.h"
 #include "Cloth2.h"
 
+#include "glm\gtc\constants.hpp"
+#include "glm\gtx\rotate_vector.hpp"
+
 #include <iostream>
 #include <algorithm>
 #include <stdlib.h>
 #include <time.h>
+
+#define GLM_FORCE_RADIANS
 
 /*https://www.youtube.com/watch?v=RqRxhY6iLto */
 
@@ -54,6 +59,7 @@ int main(int argc, char ** argv[])
 	srand(time(NULL));
 
 	glm::vec3 wind(0,0,0);
+
 	while (!display.IsClosed())
 	{
 		//time handling
@@ -108,7 +114,7 @@ int main(int argc, char ** argv[])
 		shader.Use();
 		shader.Update(transform, camera);
 		
-		//texture.Use();
+		texture.Use();
 		//monkey.Draw();
 
 		//Physics handling semi-fixed timestep

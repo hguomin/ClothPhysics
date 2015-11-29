@@ -82,6 +82,7 @@
     <ClCompile Include="Cloth2.cpp" />
     <ClCompile Include="Display.cpp" />
     <ClCompile Include="GridMesh.cpp" />
+    <ClCompile Include="Half-Edge(notMine)\trimesh.cpp" />
     <ClCompile Include="Keyboard.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Mesh.cpp" />
@@ -97,6 +98,8 @@
     <ClInclude Include="Cloth2.h" />
     <ClInclude Include="Display.h" />
     <ClInclude Include="GridMesh.h" />
+    <ClInclude Include="Half-Edge(notMine)\trimesh.h" />
+    <ClInclude Include="Half-Edge(notMine)\trimesh_types.h" />
     <ClInclude Include="Keyboard.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="Mouse.h" />

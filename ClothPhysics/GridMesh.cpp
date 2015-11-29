@@ -1,4 +1,5 @@
 #include "GridMesh.h"
+#include "Half-Edge(notMine)\trimesh.h"
 #include <iostream>
 
 GridMesh::GridMesh()
@@ -26,19 +27,37 @@ void GridMesh::InitGridMesh(unsigned int height, unsigned int width)
 		}
 	}
 	//create indices
+	int count = 0;
+	std::vector< trimesh::triangle_t > triangles;
+	triangles.resize(m_height*m_width);
 	for (unsigned int j = 0; j < m_height - 1; j++)
 	{
 		for (unsigned int i = 0; i < m_width - 1; i++)
 		{
 			model.indices.push_back(j*m_height + i);
+			triangles[count].v[0] = j*m_height + i;
 			model.indices.push_back(j*m_height + i + 1);
+			triangles[count].v[1] = j*m_height + i + 1;
 			model.indices.push_back((j + 1)*m_height + i);
-
+			triangles[count].v[2] = (j + 1)*m_height + i;
+			
+			//next triangle
+			count++;
 			model.indices.push_back(j*m_height + i + 1);
+			triangles[count].v[0] = j*m_height + i + 1;
 			model.indices.push_back((j + 1)*m_height + i + 1);
+			triangles[count].v[1] = (j + 1)*m_height + i + 1;
 			model.indices.push_back((j + 1)*m_height + i);
+			triangles[count].v[2] = (j + 1)*m_height + i;
+			count++;
 		}
 	}
+
+	std::vector<trimesh::edge_t> edges;
+	trimesh::unordered_edges_from_triangles(triangles.size(), &triangles[0], edges);
+
+	trimesh::trimesh_t mesh;
+	mesh.build(count + 2, triangles.size(), &triangles[0], edges.size(), &edges[0]);
 
 	InitMesh(model);
 	m_model = model;
@@ -79,6 +98,7 @@ void GridMesh::UpdatePositions(std::vector<glm::vec3> &pos)
 {
 	assert(pos.size() == m_model.positions.size());
 	m_model.positions = pos;
+	UpdateTextureCoords();
 }
 
 void GridMesh::print()
@@ -93,4 +113,14 @@ void GridMesh::print()
 		}
 	}
 	std::cout << std::endl;
+}
+
+void GridMesh::UpdateNormals()
+{
+
+}
+
+void GridMesh::UpdateTextureCoords()
+{
+	//get the total size that is take the position of 
 }

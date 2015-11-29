@@ -14,6 +14,7 @@ public:
 
 	void addForce(glm::vec3 &force) { m_acceleration += force / m_mass; m_force += force; }
 	void addPosition(glm::vec3 & pos) { if (m_movable) { m_position += pos; }}
+	void addNormal(glm::vec3& norm) { m_normal += norm; }
 
 	void setMass(float mass) { m_mass = mass; };
 	void setAcceleration(glm::vec3 acceleration) { m_acceleration = acceleration; m_force = m_mass * acceleration; }
@@ -27,6 +28,8 @@ public:
 	glm::vec3 getPosition() { return *Vertex::GetPosition(); }
 	glm::vec3 getLastPosition() { return m_lastPosition; }
 	glm::vec3 getForce() { return m_force; }
+
+	void updateVelocity();
 
 	bool Movable() const { return m_movable; }
 	void makeUnmovable() { m_movable = false; }

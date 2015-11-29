@@ -14,6 +14,8 @@ public:
 
 	void Use(unsigned int unit = 0);
 
+	void StopUse(unsigned int unit = 0);
+
 	GLuint& GetTexture() { return m_texture; }
 	~Texture();
 

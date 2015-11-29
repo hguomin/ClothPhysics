@@ -19,6 +19,9 @@
     <Filter Include="Image Handeling">
       <UniqueIdentifier>{337690c4-0e87-49eb-9d95-4120d185baa3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Half-Edge">
+      <UniqueIdentifier>{8ba463dc-6c5e-400a-af9f-27d5da071c98}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -59,6 +62,9 @@
     </ClCompile>
     <ClCompile Include="Particle.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Half-Edge(notMine)\trimesh.cpp">
+      <Filter>Half-Edge</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -109,6 +115,12 @@
     </ClInclude>
     <ClInclude Include="Vertex.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Half-Edge(notMine)\trimesh_types.h">
+      <Filter>Half-Edge</Filter>
+    </ClInclude>
+    <ClInclude Include="Half-Edge(notMine)\trimesh.h">
+      <Filter>Half-Edge</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
