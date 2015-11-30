@@ -6,6 +6,7 @@
 #include <GL\glew.h>
 #include "obj_loader.h"
 #include "Vertex.h"
+#include "Half-Edge(notMine)\trimesh.h"
 
 class Mesh
 {

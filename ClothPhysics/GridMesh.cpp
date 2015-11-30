@@ -26,40 +26,43 @@ void GridMesh::InitGridMesh(unsigned int height, unsigned int width)
 			model.normals.push_back(glm::vec3(0, 1, 0));
 		}
 	}
-	//create indices
-	int count = 0;
-	std::vector< trimesh::triangle_t > triangles;
-	triangles.resize(m_height*m_width);
+
+	unsigned int numFaces = 0;
 	for (unsigned int j = 0; j < m_height - 1; j++)
 	{
 		for (unsigned int i = 0; i < m_width - 1; i++)
 		{
-			model.indices.push_back(j*m_height + i);
-			triangles[count].v[0] = j*m_height + i;
-			model.indices.push_back(j*m_height + i + 1);
-			triangles[count].v[1] = j*m_height + i + 1;
-			model.indices.push_back((j + 1)*m_height + i);
-			triangles[count].v[2] = (j + 1)*m_height + i;
-			
-			//next triangle
-			count++;
-			model.indices.push_back(j*m_height + i + 1);
-			triangles[count].v[0] = j*m_height + i + 1;
-			model.indices.push_back((j + 1)*m_height + i + 1);
-			triangles[count].v[1] = (j + 1)*m_height + i + 1;
-			model.indices.push_back((j + 1)*m_height + i);
-			triangles[count].v[2] = (j + 1)*m_height + i;
-			count++;
+			const unsigned int index = i + j*m_width;
+			const unsigned int step_right = 1;
+			const unsigned int step_down = m_width;
+			trimesh::triangle_t temp;
+
+			model.indices.push_back(index);
+			temp.v[0] = index;
+			model.indices.push_back(index + step_right);
+			temp.v[1] = index + step_right;
+			model.indices.push_back(index + step_down);
+			temp.v[2] = index + step_down;
+			m_triangles.push_back(temp);
+			numFaces++;
+
+			model.indices.push_back(index + step_down);
+			temp.v[0] = index + step_down;
+			model.indices.push_back(index + step_right);
+			temp.v[1] = index + step_right;
+			model.indices.push_back(index + step_down + step_right);
+			temp.v[2] = index + step_down + step_right;
+
+			m_triangles.push_back(temp);
+			numFaces++;
 		}
 	}
+	const unsigned int kNumVertices = numFaces + 1;
 
-	std::vector<trimesh::edge_t> edges;
-	trimesh::unordered_edges_from_triangles(triangles.size(), &triangles[0], edges);
+	trimesh::unordered_edges_from_triangles(m_triangles.size(), &m_triangles[0], m_edges);
 
-	trimesh::trimesh_t mesh;
-	mesh.build(count + 2, triangles.size(), &triangles[0], edges.size(), &edges[0]);
-
-	InitMesh(model);
+	m_triMesh.build(kNumVertices, m_triangles.size(), &m_triangles[0], m_edges.size(), &m_edges[0]);
+	Mesh::InitMesh(model);
 	m_model = model;
 }
 

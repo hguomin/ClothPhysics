@@ -33,6 +33,10 @@ private:
 	void UpdateTextureCoords();
 	unsigned int m_height;
 	unsigned int m_width;
+
+	std::vector <trimesh::triangle_t> m_triangles;
+	std::vector <trimesh::edge_t > m_edges;
+	trimesh::trimesh_t m_triMesh;
 };
 
 #endif //GRIDMESH_H
