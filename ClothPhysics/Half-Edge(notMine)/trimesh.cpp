@@ -337,6 +337,31 @@ namespace trimesh
 		return result;
 	}
 
+	void trimesh_t::vertices_for_face(const index_t face_index, std::vector< index_t>& result) const
+	{
+		result.clear();
+
+		const index_t start_hei = m_face_halfedges[face_index];
+		//getting the first vertex
+		index_t hei = start_hei;
+		const halfedge_t& he_one = m_halfedges[hei];
+		result.push_back(he_one.to_vertex);
+		//getting the second vertex
+		hei = he_one.next_he;
+		const halfedge_t& he_two = m_halfedges[hei];
+		result.push_back(he_two.to_vertex);
+		//getting the third vertex
+		hei = he_two.next_he;
+		const halfedge_t& he_three = m_halfedges[hei];
+		result.push_back(he_three.to_vertex);
+	}
+	std::vector< index_t > trimesh_t::vertices_for_face(const index_t face_index) const
+	{
+		std::vector<index_t> res;
+		vertices_for_face(face_index,res);
+		return res;
+	}
+
 	bool trimesh_t::vertex_is_boundary(const index_t vertex_index) const
 	{
 		return -1 == m_halfedges[m_vertex_halfedges[vertex_index]].face;

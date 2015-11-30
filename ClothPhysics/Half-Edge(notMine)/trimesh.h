@@ -102,6 +102,12 @@ namespace trimesh
 		*/
 		bool vertex_is_boundary(const index_t vertex_index) const;
 
+		/*
+		Returns in 'result' the three vertices that builds face_index
+		*/
+		void vertices_for_face(const index_t face_index, std::vector< index_t>& result) const;
+		std::vector< index_t > vertices_for_face(const index_t face_index) const;
+
 		std::vector< index_t > boundary_vertices() const;
 
 		std::vector< std::pair< index_t, index_t > > boundary_edges() const;

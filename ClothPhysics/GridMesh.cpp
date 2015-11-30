@@ -1,6 +1,7 @@
 #include "GridMesh.h"
 #include "Half-Edge(notMine)\trimesh.h"
 #include <iostream>
+#include <utility>
 
 GridMesh::GridMesh()
 {
@@ -135,12 +136,86 @@ void GridMesh::UpdateTextureCoords()
 
 void GridMesh::SplitVertex(unsigned int v_X, unsigned int v_Y)
 {
+	const unsigned int index = v_X + v_Y*m_width;
+	std::vector<trimesh::index_t> neigh_faces;
+	//get the neighbour faces saved in neigh_faces
+	m_triMesh.vertex_face_neighbors(index, neigh_faces);
+
+	//trying to find the centers of each face saving the face information
+	std::vector<std::pair<glm::vec3,trimesh::index_t>> face_centers;
+	for (unsigned int face = 0; face < neigh_faces.size(); face++)
+	{
+		//extract the vertices for the current face
+		std::vector<trimesh::index_t> vertices;
+		trimesh::index_t face_index = neigh_faces.at(face);
+		m_triMesh.vertices_for_face(face_index, vertices);
+		//finding the index positions of the vertices
+		trimesh::index_t p1_index = vertices[0];
+		trimesh::index_t p2_index = vertices[1];
+		trimesh::index_t p3_index = vertices[2];
+		//getting the world coordinates for the vertices
+		glm::vec3 p1 = m_model.positions[p1_index];
+		glm::vec3 p2 = m_model.positions[p2_index];
+		glm::vec3 p3 = m_model.positions[p3_index];
+		//getting averaged middle and save it + average to what face
+		glm::vec3 center = (p1 + p2 + p3)*0.33f;
+		face_centers.push_back(std::make_pair(center,face_index));
+	}
+
+	//get what side the center point is on
+	glm::vec3 plane_normal = glm::vec3(0, 1, 0);
+	glm::vec3 plane_point = glm::vec3(1, 1, 0); //in the exact middle
+	std::vector<std::pair<bool, trimesh::index_t>> above_below_plane;
+	for (unsigned int i = 0; i < face_centers.size(); i++)
+	{
+		float projection = glm::dot(plane_normal, plane_point - face_centers.at(i).first);
+		if (projection > 0)
+		{
+			//above plane
+			above_below_plane.push_back(std::make_pair(true, face_centers.at(i).second));
+		}
+		else if (projection < 0)
+		{
+			//below plane
+			above_below_plane.push_back(std::make_pair(false, face_centers.at(i).second));
+		}
+		else
+		{
+			//on plane
+			above_below_plane.push_back(std::make_pair(false, face_centers.at(i).second));
+		}
+	}
+
+	/*TODO: */
+	//create new particle at the same point as the splitting point
+	//new particle will have edges from above the splitting plane
+	//old particle wwill have edges from belo the splitting plane
+	//(this means that we have to have someway of updating the indices list nicely.)
+
+	//update the trianglemesh, particles, normal mesh
+
+	/*
+	for (unsigned int i = 0; i < face_centers.size(); i++)
+	{
+		std::cout << "Center point: " << face_centers.at(i).first.x << " " << face_centers.at(i).first.y << " " <<
+			face_centers.at(i).first.z << " is above plane: " << above_below_plane.at(i).first <<
+			" , Face index: " << face_centers.at(i).second << std::endl;
+	}
+	*/
+	/*
 	std::vector< trimesh::index_t > neighs;
 	const unsigned int index = v_X + v_Y*m_width;
 	m_triMesh.vertex_face_neighbors(index, neighs);
-	for (unsigned int i = 0; i < neighs.size(); i++)
+	for (unsigned int  j = 0; j < neighs.size(); j++)
 	{
-		std::cout << neighs.at(i) << " ";
+		std::vector<trimesh::index_t > face_ver;
+		m_triMesh.vertices_for_face(neighs.at(j), face_ver);
+		std::cout << "Indecies for face: " << neighs.at(j) << std::endl;
+		for (unsigned int i = 0; i < face_ver.size(); i++)
+		{
+			std::cout << face_ver.at(i) << " ";
+		}
+		std::cout << std::endl;
 	}
-	std::cout << std::endl;
+	*/
 }
