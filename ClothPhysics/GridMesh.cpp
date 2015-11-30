@@ -10,6 +10,7 @@ GridMesh::GridMesh()
 GridMesh::GridMesh(unsigned int height, unsigned int width) : m_height(height), m_width(width)
 {
 	InitGridMesh(height, width);
+	print();
 }
 
 void GridMesh::InitGridMesh(unsigned int height, unsigned int width)
@@ -107,6 +108,8 @@ void GridMesh::UpdatePositions(std::vector<glm::vec3> &pos)
 
 void GridMesh::print()
 {
+	SplitVertex(1, 1);
+	/*
 	glm::vec3 temp;
 	for (unsigned int i = 0; i < m_height; i++)
 	{
@@ -117,6 +120,7 @@ void GridMesh::print()
 		}
 	}
 	std::cout << std::endl;
+	*/
 }
 
 void GridMesh::UpdateNormals()
@@ -127,4 +131,16 @@ void GridMesh::UpdateNormals()
 void GridMesh::UpdateTextureCoords()
 {
 	//get the total size that is take the position of 
+}
+
+void GridMesh::SplitVertex(unsigned int v_X, unsigned int v_Y)
+{
+	std::vector< trimesh::index_t > neighs;
+	const unsigned int index = v_X + v_Y*m_width;
+	m_triMesh.vertex_face_neighbors(index, neighs);
+	for (unsigned int i = 0; i < neighs.size(); i++)
+	{
+		std::cout << neighs.at(i) << " ";
+	}
+	std::cout << std::endl;
 }

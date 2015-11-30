@@ -34,6 +34,7 @@ private:
 	unsigned int m_height;
 	unsigned int m_width;
 
+	void SplitVertex(unsigned int v_X, unsigned int v_Y);
 	trimesh::trimesh_t m_triMesh;
 };
 

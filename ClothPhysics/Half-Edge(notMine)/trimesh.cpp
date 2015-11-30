@@ -259,5 +259,86 @@ namespace trimesh
 			edges_out.at(e).end() = it->second;
 		}
 	}
+	void trimesh_t::clear()
+	{
+		m_halfedges.clear();
+		m_vertex_halfedges.clear();
+		m_face_halfedges.clear();
+		m_edge_halfedges.clear();
+		m_directed_edge2he_index.clear();
+	}
 
+	std::pair< index_t, index_t > trimesh_t::he_index2directed_edge(const index_t he_index) const
+	{
+		const halfedge_t& he = m_halfedges[he_index];
+		return std::make_pair(m_halfedges[he.opposite_he].to_vertex, he.to_vertex);
+	}
+
+	index_t trimesh_t::directed_edge2he_index(const index_t i, const index_t j) const
+	{
+		directed_edge2index_map_t::const_iterator result = m_directed_edge2he_index.find(std::make_pair(i, j));
+		if (result == m_directed_edge2he_index.end()) return -1;
+
+		return result->second;
+	}
+
+	void trimesh_t::vertex_vertex_neighbors(const index_t vertex_index, std::vector< index_t >& result) const
+	{
+		result.clear();
+
+		const index_t start_hei = m_vertex_halfedges[vertex_index];
+		index_t hei = start_hei;
+		unsigned int count = 0;
+		while (true)
+		{
+			const halfedge_t& he = m_halfedges[hei];
+			result.push_back(he.to_vertex);
+
+			hei = m_halfedges[he.opposite_he].next_he;
+			if (hei == start_hei) break;
+			count++;
+		}
+	}
+
+	std::vector< index_t > trimesh_t::vertex_vertex_neighbors(const index_t vertex_index) const
+	{
+		std::vector< index_t > result;
+		vertex_vertex_neighbors(vertex_index, result);
+		return result;
+	}
+	
+	int trimesh_t::vertex_valence(const index_t vertex_index) const
+	{
+		std::vector< index_t > neighbors;
+		vertex_vertex_neighbors(vertex_index, neighbors);
+		return neighbors.size();
+	}
+
+	void trimesh_t::vertex_face_neighbors(const index_t vertex_index, std::vector< index_t >& result) const
+	{
+		result.clear();
+
+		const index_t start_hei = m_vertex_halfedges[vertex_index];
+		index_t hei = start_hei;
+		while (true)
+		{
+			const halfedge_t& he = m_halfedges[hei];
+			if (-1 != he.face) result.push_back(he.face);
+
+			hei = m_halfedges[he.opposite_he].next_he;
+			if (hei == start_hei) break;
+		}
+	}
+
+	std::vector< index_t > trimesh_t::vertex_face_neighbors(const index_t vertex_index) const
+	{
+		std::vector< index_t > result;
+		vertex_face_neighbors(vertex_index, result);
+		return result;
+	}
+
+	bool trimesh_t::vertex_is_boundary(const index_t vertex_index) const
+	{
+		return -1 == m_halfedges[m_vertex_halfedges[vertex_index]].face;
+	}
 }
