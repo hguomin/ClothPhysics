@@ -15,6 +15,8 @@ GridMesh::GridMesh(unsigned int height, unsigned int width) : m_height(height), 
 void GridMesh::InitGridMesh(unsigned int height, unsigned int width)
 {
 	IndexedModel model;
+	std::vector<trimesh::edge_t> edges;
+	std::vector<trimesh::triangle_t> triangles;
 
 	//generate vertex positions
 	for (unsigned int j = 0; j < height; j++)
@@ -26,8 +28,7 @@ void GridMesh::InitGridMesh(unsigned int height, unsigned int width)
 			model.normals.push_back(glm::vec3(0, 1, 0));
 		}
 	}
-
-	unsigned int numFaces = 0;
+	unsigned int count = 0;
 	for (unsigned int j = 0; j < m_height - 1; j++)
 	{
 		for (unsigned int i = 0; i < m_width - 1; i++)
@@ -43,8 +44,8 @@ void GridMesh::InitGridMesh(unsigned int height, unsigned int width)
 			temp.v[1] = index + step_right;
 			model.indices.push_back(index + step_down);
 			temp.v[2] = index + step_down;
-			m_triangles.push_back(temp);
-			numFaces++;
+			triangles.push_back(temp);
+			count++;
 
 			model.indices.push_back(index + step_down);
 			temp.v[0] = index + step_down;
@@ -53,15 +54,15 @@ void GridMesh::InitGridMesh(unsigned int height, unsigned int width)
 			model.indices.push_back(index + step_down + step_right);
 			temp.v[2] = index + step_down + step_right;
 
-			m_triangles.push_back(temp);
-			numFaces++;
+			triangles.push_back(temp);
+			count++;
 		}
 	}
-	const unsigned int kNumVertices = numFaces + 1;
-
-	trimesh::unordered_edges_from_triangles(m_triangles.size(), &m_triangles[0], m_edges);
-
-	m_triMesh.build(kNumVertices, m_triangles.size(), &m_triangles[0], m_edges.size(), &m_edges[0]);
+	const unsigned int kNumVertices = width*height;
+	//create the edge list for our trimesh
+	trimesh::unordered_edges_from_triangles(triangles.size(), &triangles[0], edges);
+	//build the trimesh
+	m_triMesh.build(kNumVertices, triangles.size(), &triangles[0], edges.size(), &edges[0]);
 	Mesh::InitMesh(model);
 	m_model = model;
 }

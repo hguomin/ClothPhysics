@@ -46,8 +46,8 @@ int main(int argc, char ** argv[])
 	Transform transform;
 	Keyboard keyboard;
 	Mouse mouse;
-
-	Cloth2 cloth(3, 3, 3, 3);
+	const unsigned cloth_size = 10;
+	Cloth2 cloth(cloth_size, cloth_size, cloth_size, cloth_size);
 
 	float counter = 0.0f;
 	Mesh monkey("./models/monkey3.obj");

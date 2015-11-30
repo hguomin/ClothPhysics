@@ -106,6 +106,7 @@ namespace trimesh
 
 			const index_t start_hei = m_vertex_halfedges[vertex_index];
 			index_t hei = start_hei;
+			unsigned int count = 0;
 			while (true)
 			{
 				const halfedge_t& he = m_halfedges[hei];
@@ -113,6 +114,7 @@ namespace trimesh
 
 				hei = m_halfedges[he.opposite_he].next_he;
 				if (hei == start_hei) break;
+				count++;
 			}
 		}
 		std::vector< index_t > vertex_vertex_neighbors(const index_t vertex_index) const
