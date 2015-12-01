@@ -1,4 +1,4 @@
-#include "trimesh.h"
+﻿#include "trimesh.h"
 
 /*This code is taken from https://github.com/yig/halfedge 29 november 2015.
 Author: Yotam Gingold <yotam (strudel) yotamgingold.com>
@@ -336,7 +336,7 @@ namespace trimesh
 		vertex_face_neighbors(vertex_index, result);
 		return result;
 	}
-
+	/*Written by Jakob Törmä Ruhl*/
 	void trimesh_t::vertices_for_face(const index_t face_index, std::vector< index_t>& result) const
 	{
 		result.clear();
@@ -355,10 +355,38 @@ namespace trimesh
 		const halfedge_t& he_three = m_halfedges[hei];
 		result.push_back(he_three.to_vertex);
 	}
+	/*Written by Jakob Törmä Ruhl*/
 	std::vector< index_t > trimesh_t::vertices_for_face(const index_t face_index) const
 	{
 		std::vector<index_t> res;
 		vertices_for_face(face_index,res);
+		return res;
+	}
+
+	/*Written by Jakob Törmä Ruhl*/
+	void trimesh_t::halfedge_for_face(const index_t face_index, std::vector<trimesh::trimesh_t::halfedge_t>& result) const
+	{
+		result.clear();
+
+		const index_t start_hei = m_face_halfedges[face_index];
+		//getting the first vertex
+		index_t hei = start_hei;
+		const halfedge_t& he_one = m_halfedges[hei];
+		result.push_back(he_one);
+		//getting the second vertex
+		hei = he_one.next_he;
+		const halfedge_t& he_two = m_halfedges[hei];
+		result.push_back(he_two);
+		//getting the third vertex
+		hei = he_two.next_he;
+		const halfedge_t& he_three = m_halfedges[hei];
+		result.push_back(he_three);
+	}
+	/*Written by Jakob Törmä Ruhl*/
+	std::vector<trimesh::trimesh_t::halfedge_t> trimesh_t::halfedge_for_face(const index_t face_index) const
+	{
+		std::vector<trimesh::trimesh_t::halfedge_t> res;
+		halfedge_for_face(face_index, res);
 		return res;
 	}
 
