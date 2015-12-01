@@ -109,7 +109,7 @@ void GridMesh::UpdatePositions(std::vector<glm::vec3> &pos)
 
 void GridMesh::print()
 {
-	SplitVertex(0, 0);
+	SplitVertex(1, 1);
 	/*
 	glm::vec3 temp;
 	for (unsigned int i = 0; i < m_height; i++)
@@ -136,6 +136,10 @@ void GridMesh::UpdateTextureCoords()
 
 void GridMesh::SplitVertex(unsigned int v_X, unsigned int v_Y)
 {
+
+	/*going to use this quite a bit so doing some typedefs*/
+	typedef trimesh::trimesh_t::halfedge_t halfedge;
+
 	const unsigned int index = v_X + v_Y*m_width;
 	std::vector<trimesh::index_t> neigh_faces;
 	//get the neighbour faces saved in neigh_faces
@@ -165,31 +169,27 @@ void GridMesh::SplitVertex(unsigned int v_X, unsigned int v_Y)
 	//get what side the center triangle point is on
 	glm::vec3 plane_normal = glm::vec3(0, 1, 0);
 	glm::vec3 plane_point = glm::vec3(1, 1, 0); //in the exact middle
-	std::vector<trimesh::index_t> above_plane;
-	std::vector<trimesh::index_t> below_plane;
+	std::vector<trimesh::index_t> faces_above_plane;
+	std::vector<trimesh::index_t> faces_below_plane;
 	for (unsigned int i = 0; i < face_centers.size(); i++)
 	{
 		float projection = glm::dot(plane_normal, plane_point - face_centers.at(i).first);
 		if (projection > 0)
 		{
 			//above plane
-			above_plane.push_back(face_centers.at(i).second);
+			faces_above_plane.push_back(face_centers.at(i).second);
 		}
 		else if (projection < 0)
 		{
 			//below plane
-			below_plane.push_back(face_centers.at(i).second);
+			faces_below_plane.push_back(face_centers.at(i).second);
 		}
 		else
 		{
 			//on plane
-			below_plane.push_back(face_centers.at(i).second);
+			faces_below_plane.push_back(face_centers.at(i).second);
 		}
 	}
-
-
-
-
 
 	/*TODO: */
 	//create new particle at the same point as the splitting point
@@ -197,14 +197,55 @@ void GridMesh::SplitVertex(unsigned int v_X, unsigned int v_Y)
 	glm::vec3 old_normal = m_model.normals.at(index);
 	glm::vec2 old_texCoord = m_model.texCoords.at(index);
 	
+	std::vector<halfedge> half_edges_above;
+	std::vector<halfedge> half_edges_below;
+
+	std::vector<std::pair<halfedge, halfedge>> splitting_edges;
+
+	//find the edges that seperate the faces above and the faces below
+	for (unsigned int above = 0; above < faces_above_plane.size(); above++)
+	{
+		//so all edges for a triangle above is saved in half_edge_above
+		half_edges_above = m_triMesh.halfedge_for_face(faces_above_plane.at(above));
+		for (unsigned int below = 0; below < faces_below_plane.size(); below++)
+		{
+			//and getting all the half edges for a triangle below
+			half_edges_below = m_triMesh.halfedge_for_face(faces_below_plane.at(below));
+
+			//check if any of these half_edges are the same
+			for each (halfedge above in half_edges_above)
+			{
+				for each (halfedge below in half_edges_below)
+				{
+					//this does not check for if edge does not exist (-1) or ghost pair
+					if (above.edge == below.edge) 
+					{
+						splitting_edges.push_back(std::make_pair(above,below));
+					}
+				}
+			}
+		}
+	}
+	//ok now we can start updating everything! yey
+	for each(std::pair<halfedge, halfedge> split_edge in splitting_edges)
+	{
+		//save the ghost edges
+		split_edge.first.ghost_he = split_edge.first.opposite_he;
+		split_edge.second.ghost_he = split_edge.second.opposite_he;
+		//seperate th eedges creating a hole
+		split_edge.first.opposite_he = -1;
+		split_edge.second.opposite_he = -1;
+
+		//now update so the ones below (second) points to the new vertex
+	}
 	
 	//new particle will have edges from above the splitting plane
 	//old particle wwill have edges from belo the splitting plane
 	//(this means that we have to have someway of updating the indices list nicely.)
 
 	//update the trianglemesh, particles, normal mesh
-
-	std::vector<trimesh::trimesh_t::halfedge_t> half_edge;
+	
+	std::vector<halfedge> half_edge;
 	for (unsigned int i = 0; i < neigh_faces.size(); i++)
 	{
 		half_edge = m_triMesh.halfedge_for_face(neigh_faces.at(i));

@@ -35,13 +35,16 @@ namespace trimesh
 			index_t opposite_he;
 			// Index into the halfedges array.
 			index_t next_he;
+			//index into the halfedges array, before destruction
+			index_t ghost_he;
 
 			halfedge_t() :
 				to_vertex(-1),
 				face(-1),
 				edge(-1),
 				opposite_he(-1),
-				next_he(-1)
+				next_he(-1),
+				ghost_he(-1) //used for cloth destruction
 			{}
 		};
 
