@@ -27,6 +27,8 @@ namespace trimesh
 		{
 			// Index into the vertex array.
 			index_t to_vertex;
+			//index into the vertex array
+			index_t from_vertex;
 			// Index into the face array.
 			index_t face;
 			// Index into the edges array.
@@ -40,6 +42,7 @@ namespace trimesh
 
 			halfedge_t() :
 				to_vertex(-1),
+				from_vertex(-1),
 				face(-1),
 				edge(-1),
 				opposite_he(-1),
@@ -117,6 +120,8 @@ namespace trimesh
 		std::vector< index_t > boundary_vertices() const;
 
 		std::vector< std::pair< index_t, index_t > > boundary_edges() const;
+
+		halfedge_t get_he_at_heindex(const index_t index) const { return m_halfedges.at(index); }
 
 	private:
 		std::vector< halfedge_t > m_halfedges;

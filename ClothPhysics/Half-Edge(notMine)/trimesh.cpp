@@ -81,11 +81,13 @@ namespace trimesh
 			// The face will be -1 if it is a boundary half-edge.
 			he0.face = directed_edge2face_index(de2fi, edge.v[0], edge.v[1]);
 			he0.to_vertex = edge.v[1];
+			he0.from_vertex = edge.v[0];
 			he0.edge = ei;
 
 			// The face will be -1 if it is a boundary half-edge.
 			he1.face = directed_edge2face_index(de2fi, edge.v[1], edge.v[0]);
 			he1.to_vertex = edge.v[0];
+			he1.from_vertex = edge.v[1];
 			he1.edge = ei;
 
 			// Store the opposite half-edge index.
@@ -339,6 +341,10 @@ namespace trimesh
 	/*Written by Jakob Törmä Ruhl*/
 	void trimesh_t::vertices_for_face(const index_t face_index, std::vector< index_t>& result) const
 	{
+		/*
+		Returns a list of vertices associated with a given face.
+
+		*/
 		result.clear();
 
 		const index_t start_hei = m_face_halfedges[face_index];
@@ -358,6 +364,10 @@ namespace trimesh
 	/*Written by Jakob Törmä Ruhl*/
 	std::vector< index_t > trimesh_t::vertices_for_face(const index_t face_index) const
 	{
+		/*
+		Returns a list of vertices associated with a given face.
+
+		*/
 		std::vector<index_t> res;
 		vertices_for_face(face_index,res);
 		return res;
@@ -366,6 +376,10 @@ namespace trimesh
 	/*Written by Jakob Törmä Ruhl*/
 	void trimesh_t::halfedge_for_face(const index_t face_index, std::vector<trimesh::trimesh_t::halfedge_t>& result) const
 	{
+		/*
+		Returns a list of halfedges associated with a given face.
+
+		*/
 		result.clear();
 
 		const index_t start_hei = m_face_halfedges[face_index];
@@ -385,6 +399,10 @@ namespace trimesh
 	/*Written by Jakob Törmä Ruhl*/
 	std::vector<trimesh::trimesh_t::halfedge_t> trimesh_t::halfedge_for_face(const index_t face_index) const
 	{
+		/*
+		Returns a list of halfedges associated with a given face.
+
+		*/
 		std::vector<trimesh::trimesh_t::halfedge_t> res;
 		halfedge_for_face(face_index, res);
 		return res;
