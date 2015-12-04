@@ -39,6 +39,8 @@ namespace trimesh
 			index_t next_he;
 			//index into the halfedges array, before destruction
 			index_t ghost_he;
+			//index into the halfedges array, own position
+			index_t own_he_index;
 
 			halfedge_t() :
 				to_vertex(-1),
@@ -47,7 +49,8 @@ namespace trimesh
 				edge(-1),
 				opposite_he(-1),
 				next_he(-1),
-				ghost_he(-1) //used for cloth destruction
+				ghost_he(-1), //used for cloth destruction
+				own_he_index(-1)
 			{}
 		};
 
@@ -121,7 +124,9 @@ namespace trimesh
 
 		std::vector< std::pair< index_t, index_t > > boundary_edges() const;
 
-		halfedge_t get_he_at_heindex(const index_t index) const { return m_halfedges.at(index); }
+		halfedge_t& get_he_at_heindex(const index_t index) { return m_halfedges.at(index); }
+
+		void save_he(const halfedge_t& he) { m_halfedges.at(he.own_he_index) = he; }
 
 	private:
 		std::vector< halfedge_t > m_halfedges;

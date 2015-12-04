@@ -73,10 +73,12 @@ namespace trimesh
 			const index_t he0index = m_halfedges.size();
 			m_halfedges.push_back(halfedge_t());
 			halfedge_t& he0 = m_halfedges.back();
+			he0.own_he_index = he0index;
 
 			const index_t he1index = m_halfedges.size();
 			m_halfedges.push_back(halfedge_t());
 			halfedge_t& he1 = m_halfedges.back();
+			he1.own_he_index = he1index;
 
 			// The face will be -1 if it is a boundary half-edge.
 			he0.face = directed_edge2face_index(de2fi, edge.v[0], edge.v[1]);

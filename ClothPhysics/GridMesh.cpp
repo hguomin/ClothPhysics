@@ -140,6 +140,9 @@ void GridMesh::SplitVertex(unsigned int v_X, unsigned int v_Y)
 	/*going to use this quite a bit so doing some typedefs*/
 	typedef trimesh::trimesh_t::halfedge_t halfedge;
 
+	/*Changes to be implemented*/
+	std::vector<halfedge> changes_to_save;
+
 	const unsigned int index = v_X + v_Y*m_width;
 	std::vector<trimesh::index_t> neigh_faces;
 	//get the neighbour faces saved in neigh_faces
@@ -198,14 +201,14 @@ void GridMesh::SplitVertex(unsigned int v_X, unsigned int v_Y)
 	std::vector<halfedge> half_edges_below;
 
 	//first contains above, second contains below
-	std::vector<std::pair<halfedge, halfedge>> splitting_edges;
+	//std::vector<std::pair<halfedge, halfedge>> splitting_edges;
 
 	//find the edges that seperate the faces above and the faces below
-	for (unsigned int above = 0; above < faces_above_plane.size(); above++)
+	for (unsigned int i = 0; i < faces_above_plane.size(); i++)
 	{
 		//so all edges for the triangles above is saved in half_edge_above
-		auto temp = m_triMesh.halfedge_for_face(faces_above_plane.at(above));
-		half_edges_above.insert(half_edges_above.end(),temp.begin(),temp.end());
+		auto temp = m_triMesh.halfedge_for_face(faces_above_plane.at(i));
+		half_edges_above.insert(half_edges_above.end(), temp.begin(), temp.end());
 	}
 	for (unsigned int below = 0; below < faces_below_plane.size(); below++)
 	{
@@ -213,81 +216,52 @@ void GridMesh::SplitVertex(unsigned int v_X, unsigned int v_Y)
 		auto temp = m_triMesh.halfedge_for_face(faces_below_plane.at(below));
 		half_edges_below.insert(half_edges_below.end(), temp.begin(), temp.end());
 	}
+	
 	//compare the edges for one triangle above and one triangle below. 
 	//If the edge is the same then we have a pair. And that will be our splitting edge
+	std::vector<std::pair<trimesh::index_t, trimesh::index_t>> splitting_edges;
 	for each (halfedge above in half_edges_above)
 	{
 		for each (halfedge below in half_edges_below)
 		{
 			if (above.edge == below.edge)
 			{
-				splitting_edges.push_back(std::make_pair(above, below));
+				splitting_edges.push_back(std::make_pair(above.own_he_index, below.own_he_index));
 			}
 			else if ((above.ghost_he != -1) && (below.ghost_he != -1) && (above.ghost_he == below.ghost_he))
 			{
-				splitting_edges.push_back(std::make_pair(above, below));
+				splitting_edges.push_back(std::make_pair(above.own_he_index, below.own_he_index));
 			}
 		}
 	}
-	//ok now we can start updating everything! yey
+	
+	//update the splitting edges
 	for (unsigned int i = 0; i < splitting_edges.size(); i++)
 	{
-		halfedge above_split = splitting_edges.at(i).first;
-		halfedge below_split = splitting_edges.at(i).second;
-		//save information if we are not already a ghost edge
-		if (above_split.ghost_he == -1)
+		auto above = splitting_edges.at(i).first;
+		auto below = splitting_edges.at(i).second;
+		m_triMesh.get_he_at_heindex(above).ghost_he = m_triMesh.halfedge(above).opposite_he;
+		m_triMesh.get_he_at_heindex(below).ghost_he = m_triMesh.halfedge(below).opposite_he;
+		
+		m_triMesh.get_he_at_heindex(above).opposite_he = -1;
+		m_triMesh.get_he_at_heindex(below).opposite_he = -1;
+	}
+	
+	//now update the halfedges below so that they point to/from the new vertice
+	for (unsigned int i = 0; i < half_edges_below.size(); i++)
+	{
+		auto half_edge = m_triMesh.get_he_at_heindex(half_edges_below.at(i).own_he_index);
+		if (half_edge.to_vertex == index)
 		{
-			//save the ghost edges
-			above_split.ghost_he = above_split.opposite_he;
-			below_split.ghost_he = below_split.opposite_he;
-			//seperate the edges creating a hole
-			above_split.opposite_he = -1;
-			below_split.opposite_he = -1;
+			half_edge.to_vertex = -15; //size +1
+			m_triMesh.save_he(half_edge);
 		}
-		//first contains above, second contains below. Now update the below with new information
-		if (below_split.to_vertex == index)
+		else if (half_edge.from_vertex == index)
 		{
-			below_split.to_vertex = 0; // max size + 1 or something
-		}
-		else if (below_split.from_vertex == index)
-		{
-			below_split.from_vertex = 0; // max size + 1 or something
+			half_edge.from_vertex = -15; //size +1
+			m_triMesh.save_he(half_edge);
 		}
 	}
-	//NOW we update the to and from pointers for the faces below the cut
-
-	
 	std::cout << "hej" << std::endl;
 	/*TRYING STUFF HERE*/
-
-
-	//update the trianglemesh, particles, normal mesh
-	/*
-	std::vector<halfedge> half_edge;
-	for (unsigned int i = 0; i < neigh_faces.size(); i++)
-	{
-		half_edge = m_triMesh.halfedge_for_face(neigh_faces.at(i));
-
-		for (unsigned int j = 0; j < half_edge.size(); j++)
-		{
-			std::cout << "Next Half_edge: " << half_edge.at(j).next_he << " " << half_edge.at(j).opposite_he  << std::endl;
-		}
-	}
-	*/
-	/*
-	std::vector< trimesh::index_t > neighs;
-	const unsigned int index = v_X + v_Y*m_width;
-	m_triMesh.vertex_face_neighbors(index, neighs);
-	for (unsigned int  j = 0; j < neighs.size(); j++)
-	{
-		std::vector<trimesh::index_t > face_ver;
-		m_triMesh.vertices_for_face(neighs.at(j), face_ver);
-		std::cout << "Indecies for face: " << neighs.at(j) << std::endl;
-		for (unsigned int i = 0; i < face_ver.size(); i++)
-		{
-			std::cout << face_ver.at(i) << " ";
-		}
-		std::cout << std::endl;
-	}
-	*/
 }
