@@ -376,7 +376,7 @@ namespace trimesh
 	}
 
 	/*Written by Jakob Törmä Ruhl*/
-	void trimesh_t::halfedge_for_face(const index_t face_index, std::vector<trimesh::trimesh_t::halfedge_t>& result) const
+	void trimesh_t::halfedge_for_face(const index_t face_index, std::vector<trimesh::index_t>& result) const
 	{
 		/*
 		Returns a list of halfedges associated with a given face.
@@ -387,25 +387,24 @@ namespace trimesh
 		const index_t start_hei = m_face_halfedges[face_index];
 		//getting the first vertex
 		index_t hei = start_hei;
+		result.push_back(hei);
 		const halfedge_t& he_one = m_halfedges[hei];
-		result.push_back(he_one);
 		//getting the second vertex
 		hei = he_one.next_he;
+		result.push_back(hei);
 		const halfedge_t& he_two = m_halfedges[hei];
-		result.push_back(he_two);
 		//getting the third vertex
 		hei = he_two.next_he;
-		const halfedge_t& he_three = m_halfedges[hei];
-		result.push_back(he_three);
+		result.push_back(hei);
 	}
 	/*Written by Jakob Törmä Ruhl*/
-	std::vector<trimesh::trimesh_t::halfedge_t> trimesh_t::halfedge_for_face(const index_t face_index) const
+	std::vector<trimesh::index_t> trimesh_t::halfedge_for_face(const index_t face_index) const
 	{
 		/*
 		Returns a list of halfedges associated with a given face.
 
 		*/
-		std::vector<trimesh::trimesh_t::halfedge_t> res;
+		std::vector<trimesh::trimesh_t::index_t> res;
 		halfedge_for_face(face_index, res);
 		return res;
 	}

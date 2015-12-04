@@ -197,8 +197,8 @@ void GridMesh::SplitVertex(unsigned int v_X, unsigned int v_Y)
 	/*TODO: */
 	//create new particle at the same point as the splitting point
 	
-	std::vector<halfedge> half_edges_above;
-	std::vector<halfedge> half_edges_below;
+	std::vector<trimesh::index_t> half_edges_above_index;
+	std::vector<trimesh::index_t> half_edges_below_index;
 
 	//first contains above, second contains below
 	//std::vector<std::pair<halfedge, halfedge>> splitting_edges;
@@ -208,49 +208,53 @@ void GridMesh::SplitVertex(unsigned int v_X, unsigned int v_Y)
 	{
 		//so all edges for the triangles above is saved in half_edge_above
 		auto temp = m_triMesh.halfedge_for_face(faces_above_plane.at(i));
-		half_edges_above.insert(half_edges_above.end(), temp.begin(), temp.end());
+		half_edges_above_index.insert(half_edges_above_index.end(), temp.begin(), temp.end());
 	}
 	for (unsigned int below = 0; below < faces_below_plane.size(); below++)
 	{
 		//so all edges for the triangles below is saved in half_edge_below
 		auto temp = m_triMesh.halfedge_for_face(faces_below_plane.at(below));
-		half_edges_below.insert(half_edges_below.end(), temp.begin(), temp.end());
+		half_edges_below_index.insert(half_edges_below_index.end(), temp.begin(), temp.end());
 	}
 	
 	//compare the edges for one triangle above and one triangle below. 
 	//If the edge is the same then we have a pair. And that will be our splitting edge
-	std::vector<std::pair<trimesh::index_t, trimesh::index_t>> splitting_edges;
-	for each (halfedge above in half_edges_above)
+	//std::vector<std::pair<halfedge, halfedge>> splitting_edges;
+	for each (trimesh::index_t above_ind in half_edges_above_index)
 	{
-		for each (halfedge below in half_edges_below)
+		halfedge above = m_triMesh.halfedge(above_ind);
+		for each (trimesh::index_t below_ind in half_edges_below_index)
 		{
+			halfedge below = m_triMesh.halfedge(below_ind);
 			if (above.edge == below.edge)
 			{
-				splitting_edges.push_back(std::make_pair(above.own_he_index, below.own_he_index));
+			
+				above.ghost_he = above.opposite_he;
+				below.ghost_he = below.opposite_he;
+
+				above.opposite_he = -1;
+				below.opposite_he = -1;
+				m_triMesh.save_he(above);
+				m_triMesh.save_he(below);
 			}
 			else if ((above.ghost_he != -1) && (below.ghost_he != -1) && (above.ghost_he == below.ghost_he))
 			{
-				splitting_edges.push_back(std::make_pair(above.own_he_index, below.own_he_index));
+				
+				above.ghost_he = above.opposite_he;
+				below.ghost_he = below.opposite_he;
+
+				above.opposite_he = -1;
+				below.opposite_he = -1;
+				m_triMesh.save_he(above);
+				m_triMesh.save_he(below);
 			}
 		}
 	}
 	
-	//update the splitting edges
-	for (unsigned int i = 0; i < splitting_edges.size(); i++)
-	{
-		auto above = splitting_edges.at(i).first;
-		auto below = splitting_edges.at(i).second;
-		m_triMesh.get_he_at_heindex(above).ghost_he = m_triMesh.halfedge(above).opposite_he;
-		m_triMesh.get_he_at_heindex(below).ghost_he = m_triMesh.halfedge(below).opposite_he;
-		
-		m_triMesh.get_he_at_heindex(above).opposite_he = -1;
-		m_triMesh.get_he_at_heindex(below).opposite_he = -1;
-	}
-	
 	//now update the halfedges below so that they point to/from the new vertice
-	for (unsigned int i = 0; i < half_edges_below.size(); i++)
+	for (unsigned int i = 0; i < half_edges_below_index.size(); i++)
 	{
-		auto half_edge = m_triMesh.get_he_at_heindex(half_edges_below.at(i).own_he_index);
+		auto half_edge = m_triMesh.get_he_at_heindex(half_edges_below_index.at(i));
 		if (half_edge.to_vertex == index)
 		{
 			half_edge.to_vertex = -15; //size +1

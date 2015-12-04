@@ -117,8 +117,8 @@ namespace trimesh
 		void vertices_for_face(const index_t face_index, std::vector< index_t>& result) const;
 		std::vector< index_t > vertices_for_face(const index_t face_index) const;
 
-		void halfedge_for_face(const index_t face_index, std::vector<trimesh::trimesh_t::halfedge_t>& result) const;
-		std::vector<trimesh::trimesh_t::halfedge_t> halfedge_for_face(const index_t face_index) const;
+		void halfedge_for_face(const index_t face_index, std::vector<trimesh::index_t>& result) const;
+		std::vector<trimesh::index_t> halfedge_for_face(const index_t face_index) const;
 
 		std::vector< index_t > boundary_vertices() const;
 
