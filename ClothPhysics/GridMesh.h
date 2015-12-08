@@ -2,6 +2,7 @@
 #ifndef GRIDMESH_H
 #define GRIDMESH_H
 #include "Mesh.h"
+#include <string>
 
 class GridMesh : public Mesh
 {
@@ -22,6 +23,7 @@ public:
 
 	unsigned int GetHeight(){ return m_height; }
 	unsigned int GetWidth() { return m_width; }
+	bool SplitVertex(unsigned int v_X, unsigned int v_Y, const glm::vec3 vertex_pos, const glm::vec3 cut_normal);
 
 	void print();
 
@@ -34,8 +36,11 @@ private:
 	unsigned int m_height;
 	unsigned int m_width;
 
-	void SplitVertex(unsigned int v_X, unsigned int v_Y);
+	
 	trimesh::trimesh_t m_triMesh;
+
+	bool debug = true;
+	void debugMsg(const std::string& msg, int count = -1);
 };
 
 #endif //GRIDMESH_H

@@ -19,6 +19,8 @@ public:
 
 	void Update(float dt, glm::vec3 wind);
 
+	void SplitVert(unsigned int x, unsigned int y, const glm::vec3 cut_normal = glm::vec3(0, 1, 0));
+
 	void print();
 private:
 	float m_width;
@@ -28,6 +30,7 @@ private:
 	void makeConstraint(std::shared_ptr<Particle> p1, std::shared_ptr<Particle> p2, SpringType type);
 	std::vector<std::shared_ptr<Particle>> m_particles;
 	std::vector<std::shared_ptr<Spring>> m_constraints;
+	void CutConstraints(std::shared_ptr<Particle> old_particle, std::shared_ptr<Particle> new_particle, const glm::vec3 cut_plane_normal);
 
 
 	void Wind(glm::vec3 direction);

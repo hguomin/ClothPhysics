@@ -40,9 +40,11 @@ public:
 		p1->addForce(damp_force);
 		p2->addForce(-damp_force);
 	}
-private:
+
 	std::shared_ptr<Particle> p1;
 	std::shared_ptr<Particle> p2;
+private:
+
 	SpringType type;
 	float m_springConst;
 	float m_dampConst;

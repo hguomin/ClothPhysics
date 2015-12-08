@@ -72,7 +72,7 @@ void GridMesh::InitGridMesh(unsigned int height, unsigned int width)
 
 GridMesh::~GridMesh()
 {
-
+	std::cout << "GridMesh: Destroyed" << std::endl;
 }
 
 void GridMesh::Draw()
@@ -109,7 +109,6 @@ void GridMesh::UpdatePositions(std::vector<glm::vec3> &pos)
 
 void GridMesh::print()
 {
-	SplitVertex(1, 1);
 	/*
 	glm::vec3 temp;
 	for (unsigned int i = 0; i < m_height; i++)
@@ -134,14 +133,10 @@ void GridMesh::UpdateTextureCoords()
 	//get the total size that is take the position of 
 }
 
-void GridMesh::SplitVertex(unsigned int v_X, unsigned int v_Y)
+bool GridMesh::SplitVertex(unsigned int v_X, unsigned int v_Y, const glm::vec3 vertex_pos, const glm::vec3 cut_normal)
 {
-
 	/*going to use this quite a bit so doing some typedefs*/
 	typedef trimesh::trimesh_t::halfedge_t halfedge;
-
-	/*Changes to be implemented*/
-	std::vector<halfedge> changes_to_save;
 
 	const unsigned int index = v_X + v_Y*m_width;
 	std::vector<trimesh::index_t> neigh_faces;
@@ -170,13 +165,12 @@ void GridMesh::SplitVertex(unsigned int v_X, unsigned int v_Y)
 	}
 
 	//get what side the center triangle point is on
-	glm::vec3 plane_normal = glm::vec3(0, 1, 0);
-	glm::vec3 plane_point = glm::vec3(1, 1, 0); //in the exact middle
+	//glm::vec3 plane_point = glm::vec3(1, 1, 0); //in the exact middle
 	std::vector<trimesh::index_t> faces_above_plane;
 	std::vector<trimesh::index_t> faces_below_plane;
 	for (unsigned int i = 0; i < face_centers.size(); i++)
 	{
-		float projection = glm::dot(plane_normal, plane_point - face_centers.at(i).first);
+		float projection = glm::dot(cut_normal, vertex_pos - face_centers.at(i).first);
 		if (projection > 0)
 		{
 			//above plane
@@ -193,15 +187,15 @@ void GridMesh::SplitVertex(unsigned int v_X, unsigned int v_Y)
 			faces_below_plane.push_back(face_centers.at(i).second);
 		}
 	}
-
-	/*TODO: */
-	//create new particle at the same point as the splitting point
+	//if all the faces is above or below the splittingplane we cant split it
+	if (faces_above_plane.empty() || faces_below_plane.empty())
+	{
+		std::cout << "Unsuccessful split of: " << v_X << ", " << v_Y << " not connected to anything" << std::endl;
+		return false;
+	}
 	
 	std::vector<trimesh::index_t> half_edges_above_index;
 	std::vector<trimesh::index_t> half_edges_below_index;
-
-	//first contains above, second contains below
-	//std::vector<std::pair<halfedge, halfedge>> splitting_edges;
 
 	//find the edges that seperate the faces above and the faces below
 	for (unsigned int i = 0; i < faces_above_plane.size(); i++)
@@ -210,6 +204,7 @@ void GridMesh::SplitVertex(unsigned int v_X, unsigned int v_Y)
 		auto temp = m_triMesh.halfedge_for_face(faces_above_plane.at(i));
 		half_edges_above_index.insert(half_edges_above_index.end(), temp.begin(), temp.end());
 	}
+
 	for (unsigned int below = 0; below < faces_below_plane.size(); below++)
 	{
 		//so all edges for the triangles below is saved in half_edge_below
@@ -219,27 +214,15 @@ void GridMesh::SplitVertex(unsigned int v_X, unsigned int v_Y)
 	
 	//compare the edges for one triangle above and one triangle below. 
 	//If the edge is the same then we have a pair. And that will be our splitting edge
-	//std::vector<std::pair<halfedge, halfedge>> splitting_edges;
-	for each (trimesh::index_t above_ind in half_edges_above_index)
+	for each (trimesh::index_t above_index in half_edges_above_index)
 	{
-		halfedge above = m_triMesh.halfedge(above_ind);
-		for each (trimesh::index_t below_ind in half_edges_below_index)
+		halfedge above = m_triMesh.halfedge(above_index);
+		for each (trimesh::index_t below_index in half_edges_below_index)
 		{
-			halfedge below = m_triMesh.halfedge(below_ind);
-			if (above.edge == below.edge)
+			halfedge below = m_triMesh.halfedge(below_index);
+			//if we have the same edge, and that edge exists (that is not removed)
+			if ((above.edge == below.edge) && (above.edge != -1) && (below.edge != -1))
 			{
-			
-				above.ghost_he = above.opposite_he;
-				below.ghost_he = below.opposite_he;
-
-				above.opposite_he = -1;
-				below.opposite_he = -1;
-				m_triMesh.save_he(above);
-				m_triMesh.save_he(below);
-			}
-			else if ((above.ghost_he != -1) && (below.ghost_he != -1) && (above.ghost_he == below.ghost_he))
-			{
-				
 				above.ghost_he = above.opposite_he;
 				below.ghost_he = below.opposite_he;
 
@@ -254,18 +237,34 @@ void GridMesh::SplitVertex(unsigned int v_X, unsigned int v_Y)
 	//now update the halfedges below so that they point to/from the new vertice
 	for (unsigned int i = 0; i < half_edges_below_index.size(); i++)
 	{
-		auto half_edge = m_triMesh.get_he_at_heindex(half_edges_below_index.at(i));
+		halfedge half_edge = m_triMesh.get_he_at_heindex(half_edges_below_index.at(i));
 		if (half_edge.to_vertex == index)
 		{
-			half_edge.to_vertex = -15; //size +1
+			half_edge.to_vertex = 9; //size +1
 			m_triMesh.save_he(half_edge);
 		}
 		else if (half_edge.from_vertex == index)
 		{
-			half_edge.from_vertex = -15; //size +1
+			half_edge.from_vertex = 9; //size +1
 			m_triMesh.save_he(half_edge);
 		}
 	}
-	std::cout << "hej" << std::endl;
-	/*TRYING STUFF HERE*/
+	//auto tempp = m_triMesh.get_model_indices();
+
+	std::cout << "Successful split of: " << v_X << ", " << v_Y << std::endl;
+	return true;
+}
+
+
+void GridMesh::debugMsg(const std::string& msg, int count)
+{
+	if (debug)
+	{
+		std::cout << msg;
+		if (count != -1)
+		{
+			std::cout << " Count: " << count;
+		}
+		std::cout << std::endl;
+	}
 }

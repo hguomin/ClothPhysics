@@ -83,6 +83,7 @@ Cloth2::Cloth2(float width, float height, unsigned int particles_width, unsigned
 
 Cloth2::~Cloth2()
 {
+	std::cout << "Cloth2 Destroyed" << std::endl;
 }
 
 void Cloth2::makeConstraint(std::shared_ptr<Particle> p1, std::shared_ptr<Particle> p2, SpringType type)
@@ -140,13 +141,51 @@ void Cloth2::Update(float dt, glm::vec3 wind)
 {
 	AddForce(glm::vec3(0, GRAVITY, 0));
 	//Wind(wind);
-	std::shared_ptr<Particle> temp = getParticleAt((m_particles_width - 1)/2, (m_particles_height - 1)/2);
-	temp->addForce(wind);
 	TimeStep(dt);
 
 	BallCollision(glm::vec3(5,-5.0f,-5),3.0f);
 
 	GridMesh::UpdatePositions(ExtractPositions());
+	//GridMesh::SplitVertex(1, 1);
+}
+void Cloth2::SplitVert(unsigned int x, unsigned int y, const glm::vec3 cut_normal)
+{
+	const unsigned int index = x + m_width*y;
+	auto old_particle = m_particles.at(index);
+
+	if (GridMesh::SplitVertex(x, y, old_particle->getPosition(), cut_normal))
+	{
+		//update old particle mass
+		old_particle->setMass(old_particle->getMass()*0.5f);
+		//copy content of old_particle and create new_particle
+		auto new_particle = std::make_shared<Particle>(*old_particle);
+
+		m_particles.push_back(new_particle);
+		CutConstraints(old_particle, new_particle, cut_normal);
+		GridMesh::m_model.positions.push_back(new_particle->getPosition());
+	}
+}
+
+void Cloth2::CutConstraints(std::shared_ptr<Particle> old_particle, std::shared_ptr<Particle> new_particle, const glm::vec3 cut_plane_normal)
+{
+	typedef std::shared_ptr<Spring> spr;
+	std::vector<spr> part1;
+	std::vector<spr> part2;
+	
+	for each (spr constraint in m_constraints)
+	{
+		if (constraint->p1 == old_particle)
+		{
+			part1.push_back(constraint);
+		}
+		else if (constraint->p2 == old_particle)
+		{
+			part2.push_back(constraint);
+		}
+	}
+	
+	part1.clear();
+	part2.clear();
 }
 
 void Cloth2::print()

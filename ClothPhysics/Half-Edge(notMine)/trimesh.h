@@ -10,6 +10,7 @@ GitHub: https://github.com/yig/halfedge
 #include "trimesh_types.h" // triangle_t, edge_t
 #include <vector>
 #include <map>
+#include <iostream>
 
 namespace trimesh
 {
@@ -20,6 +21,7 @@ namespace trimesh
 	class trimesh_t
 	{
 	public:
+		~trimesh_t() { std::cout << "trimesh_t destroyed" << std::endl; }
 		// I need positive and negative numbers so that I can use -1 for an invalid index.
 		typedef long index_t;
 
@@ -117,17 +119,26 @@ namespace trimesh
 		void vertices_for_face(const index_t face_index, std::vector< index_t>& result) const;
 		std::vector< index_t > vertices_for_face(const index_t face_index) const;
 
+		/*
+		Returns all the halfedges associated with a face in a vector
+		*/
 		void halfedge_for_face(const index_t face_index, std::vector<trimesh::index_t>& result) const;
 		std::vector<trimesh::index_t> halfedge_for_face(const index_t face_index) const;
+		/*
+		returns the halfedge at a given halfedge index
+		*/
+		halfedge_t& get_he_at_heindex(const index_t index) { return m_halfedges.at(index); }
+		/*
+		Saves a given he at that he_s own index
+		*/
+		void save_he(const halfedge_t& he);
+		/*
+		Returns a indice list for the model so we can draw it in OpenGL
+		*/
+		std::vector<unsigned int> get_model_indices();
 
 		std::vector< index_t > boundary_vertices() const;
-
 		std::vector< std::pair< index_t, index_t > > boundary_edges() const;
-
-		halfedge_t& get_he_at_heindex(const index_t index) { return m_halfedges.at(index); }
-
-		void save_he(const halfedge_t& he) { m_halfedges.at(he.own_he_index) = he; }
-
 	private:
 		std::vector< halfedge_t > m_halfedges;
 		// Offsets into the 'halfedges' sequence, one per vertex.
@@ -139,6 +150,10 @@ namespace trimesh
 		// A map from an ordered edge (an std::pair of index_t's) to an offset into the 'halfedge' sequence.
 		typedef std::map< std::pair< index_t, index_t >, index_t > directed_edge2index_map_t;
 		directed_edge2index_map_t m_directed_edge2he_index;
+
+		void UpdateVertex(const halfedge_t& he);
+		void UpdateFace(const halfedge_t& he);
+		void UpdateEdge(const halfedge_t& he);
 	};
 
 }

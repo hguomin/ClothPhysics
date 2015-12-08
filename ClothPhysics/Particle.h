@@ -34,6 +34,7 @@ public:
 	bool Movable() const { return m_movable; }
 	void makeUnmovable() { m_movable = false; }
 	void makeMovable() { m_movable = true; }
+
 private:
 	float m_mass;
 	glm::vec3 m_acceleration;

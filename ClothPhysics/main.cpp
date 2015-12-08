@@ -30,7 +30,7 @@
 #define MS_PER_SECOND 1000.0f
 #define DESIRED_FRAME_TIME (MS_PER_SECOND/ DESIRED_FPS)
 #define MAX_DELTA_TIME 0.1f
-
+bool only_once = false;
 
 int main(int argc, char ** argv[])
 {
@@ -88,6 +88,7 @@ int main(int argc, char ** argv[])
 
 		keyboard.HandleEvent(currentKeyStates, camera);
 		float amount = 1.0f;
+		
 		if (currentKeyStates[SDL_SCANCODE_O])
 		{
 			wind.z += amount;
@@ -107,6 +108,15 @@ int main(int argc, char ** argv[])
 		if (currentKeyStates[SDL_SCANCODE_J])
 		{
 			wind = glm::vec3(0);
+		}
+		if (!only_once)
+		{
+			if (currentKeyStates[SDL_SCANCODE_9])
+			{
+
+				cloth.SplitVert(1, 1);
+				only_once = false;
+			}
 		}
 
 		sky.Draw(transform, camera);

@@ -324,14 +324,41 @@ namespace trimesh
 
 		const index_t start_hei = m_vertex_halfedges[vertex_index];
 		index_t hei = start_hei;
+		int count = 0;
+		//assuming we have holes in our mesh
+		while (true)
+		{
+			const halfedge_t& he = m_halfedges[hei];
+			if (-1 != he.face && he.from_vertex == vertex_index)
+			{
+				//only add to the face if our index is part of it
+				result.push_back(he.face);
+			}
+			if (he.opposite_he == -1 && he.ghost_he != -1)
+			{
+				//if we have a opening use our ghost instead
+				hei = m_halfedges[he.ghost_he].next_he;
+			}
+			else
+			{
+				//else use opposite
+				hei = m_halfedges[he.opposite_he].next_he;
+			}
+
+			if (hei == start_hei)
+			{
+				break;
+			}
+		}
+		/* typ fungerande
 		while (true)
 		{
 			const halfedge_t& he = m_halfedges[hei];
 			if (-1 != he.face) result.push_back(he.face);
-
 			hei = m_halfedges[he.opposite_he].next_he;
 			if (hei == start_hei) break;
 		}
+		*/
 	}
 
 	std::vector< index_t > trimesh_t::vertex_face_neighbors(const index_t vertex_index) const
@@ -407,6 +434,58 @@ namespace trimesh
 		std::vector<trimesh::trimesh_t::index_t> res;
 		halfedge_for_face(face_index, res);
 		return res;
+	}
+
+	std::vector<unsigned int> trimesh_t::get_model_indices()
+	{
+		std::vector<unsigned int> result;
+		for (unsigned int i = 0; i < m_face_halfedges.size(); i++)
+		{
+			const index_t start_hei = m_face_halfedges[i];
+			//getting the first vertex
+			index_t hei = start_hei;
+			const halfedge_t& he_one = m_halfedges[hei];
+			result.push_back(he_one.to_vertex);
+			//getting the second vertex
+			hei = he_one.next_he;
+			const halfedge_t& he_two = m_halfedges[hei];
+			result.push_back(he_two.to_vertex);
+			//getting the third vertex
+			hei = he_two.next_he;
+			const halfedge_t& he_three = m_halfedges[hei];
+			result.push_back(he_three.to_vertex);
+		}
+		return result;
+	}
+	void trimesh_t::save_he(const halfedge_t& he)
+	{
+		m_halfedges.at(he.own_he_index) = he;
+		UpdateVertex(he);
+		UpdateFace(he);
+		UpdateEdge(he);
+	}
+	void trimesh_t::UpdateVertex(const halfedge_t& he)
+	{
+		m_vertex_halfedges[he.from_vertex] = he.own_he_index;
+	}
+	void trimesh_t::UpdateFace(const halfedge_t& he)
+	{
+		for (unsigned int i = 0; i < m_face_halfedges.size(); i++)
+		{
+			if (he.own_he_index == m_face_halfedges[i])
+			{
+				//if the HE does not have the correct facing
+				if (he.face != i)
+				{
+					std::cout << "Probelm in Update Face!" << std::endl;
+				}
+
+			}
+		}
+	}
+	void trimesh_t::UpdateEdge(const halfedge_t& he)
+	{
+
 	}
 
 	bool trimesh_t::vertex_is_boundary(const index_t vertex_index) const

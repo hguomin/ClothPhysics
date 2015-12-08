@@ -21,6 +21,7 @@ Mesh::Mesh(const std::string& fileName, GLenum DRAWTYPE) : m_DRAWTYPE(DRAWTYPE)
 Mesh::~Mesh()
 {
 	glDeleteVertexArrays(1, &m_vertexArrayObject);
+	std::cout << "Mesh Destroyed" << std::endl;
 }
 
 
