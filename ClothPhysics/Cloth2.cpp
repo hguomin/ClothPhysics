@@ -140,7 +140,7 @@ void Cloth2::AddForce(glm::vec3 &force)
 void Cloth2::Update(float dt, glm::vec3 wind)
 {
 	AddForce(glm::vec3(0, GRAVITY, 0));
-	//Wind(wind);
+	Wind(wind);
 	TimeStep(dt);
 
 	BallCollision(glm::vec3(5,-5.0f,-5),3.0f);
@@ -150,7 +150,7 @@ void Cloth2::Update(float dt, glm::vec3 wind)
 }
 void Cloth2::SplitVert(unsigned int x, unsigned int y, const glm::vec3 cut_normal)
 {
-	const unsigned int index = x + m_width*y;
+	const unsigned int index = x + m_particles_width*y;
 	auto old_particle = m_particles.at(index);
 
 	if (GridMesh::SplitVertex(x, y, old_particle->getPosition(), cut_normal))
@@ -163,29 +163,98 @@ void Cloth2::SplitVert(unsigned int x, unsigned int y, const glm::vec3 cut_norma
 		m_particles.push_back(new_particle);
 		CutConstraints(old_particle, new_particle, cut_normal);
 		GridMesh::m_model.positions.push_back(new_particle->getPosition());
+		GridMesh::UpdateIndices();
+	}
+}
+
+bool Cloth2::isBend(const std::shared_ptr<Spring> spr)
+{
+	if (spr->getType() == SpringType::BEND)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+bool Cloth2::BelowPlane(const glm::vec3& test_point, const glm::vec3& point_on_plane, const glm::vec3& plane_normal)
+{
+	float projection = glm::dot(plane_normal, point_on_plane - test_point);
+	if (projection <= 0)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
 	}
 }
 
 void Cloth2::CutConstraints(std::shared_ptr<Particle> old_particle, std::shared_ptr<Particle> new_particle, const glm::vec3 cut_plane_normal)
 {
+	//typedef cause this is used quite a bit
 	typedef std::shared_ptr<Spring> spr;
 	std::vector<spr> part1;
 	std::vector<spr> part2;
 	
-	for each (spr constraint in m_constraints)
+	//going backwards because we don't want to miss anything when we erease the bend
+	for (unsigned int i = m_constraints.size() -1 ; i > 0; i--)
 	{
+		spr constraint = m_constraints.at(i);
 		if (constraint->p1 == old_particle)
 		{
-			part1.push_back(constraint);
+			if (isBend(constraint))
+			{
+				m_constraints.erase(m_constraints.begin() + i);
+			}
+			else if (BelowPlane(constraint->p2->getPosition(), old_particle->getPosition(),cut_plane_normal))
+			{
+				part1.push_back(constraint);
+			}
 		}
 		else if (constraint->p2 == old_particle)
 		{
-			part2.push_back(constraint);
+			if (isBend(constraint))
+			{
+				m_constraints.erase(m_constraints.begin() + i);
+			}
+			else if (BelowPlane(constraint->p1->getPosition(), old_particle->getPosition(), cut_plane_normal))
+			{
+				part2.push_back(constraint);
+			}
 		}
 	}
-	
-	part1.clear();
-	part2.clear();
+
+	for each (spr constraint in part1)
+	{
+		constraint->setParticle_1(new_particle);
+	}
+	for each (spr constraint in part2)
+	{
+		constraint->setParticle_2(new_particle);
+	}
+}
+
+bool Cloth2::ParticleAbovePlane(const std::shared_ptr<Particle> particle, const glm::vec3 plane, const glm::vec3 on_plane)
+{
+		float projection = glm::dot(plane, on_plane - particle->getPosition());
+		if (projection > 0)
+		{
+			//above plane
+			return true;
+		}
+		else if (projection < 0)
+		{
+			//below plane
+			return false;
+		}
+		else
+		{
+			//on plane
+			return false;
+		}
 }
 
 void Cloth2::print()

@@ -171,12 +171,12 @@ bool GridMesh::SplitVertex(unsigned int v_X, unsigned int v_Y, const glm::vec3 v
 	for (unsigned int i = 0; i < face_centers.size(); i++)
 	{
 		float projection = glm::dot(cut_normal, vertex_pos - face_centers.at(i).first);
-		if (projection > 0)
+		if (projection < 0)
 		{
 			//above plane
 			faces_above_plane.push_back(face_centers.at(i).second);
 		}
-		else if (projection < 0)
+		else if (projection > 0)
 		{
 			//below plane
 			faces_below_plane.push_back(face_centers.at(i).second);
@@ -221,7 +221,7 @@ bool GridMesh::SplitVertex(unsigned int v_X, unsigned int v_Y, const glm::vec3 v
 		{
 			halfedge below = m_triMesh.halfedge(below_index);
 			//if we have the same edge, and that edge exists (that is not removed)
-			if ((above.edge == below.edge) && (above.edge != -1) && (below.edge != -1))
+			if ((above.edge == below.edge)) //&& (above.edge != -1) && (below.edge != -1))
 			{
 				above.ghost_he = above.opposite_he;
 				below.ghost_he = below.opposite_he;
@@ -238,21 +238,35 @@ bool GridMesh::SplitVertex(unsigned int v_X, unsigned int v_Y, const glm::vec3 v
 	for (unsigned int i = 0; i < half_edges_below_index.size(); i++)
 	{
 		halfedge half_edge = m_triMesh.get_he_at_heindex(half_edges_below_index.at(i));
+		
 		if (half_edge.to_vertex == index)
 		{
-			half_edge.to_vertex = 9; //size +1
+			half_edge.to_vertex = m_model.positions.size(); //size +1
 			m_triMesh.save_he(half_edge);
+			
 		}
 		else if (half_edge.from_vertex == index)
 		{
-			half_edge.from_vertex = 9; //size +1
+			half_edge.from_vertex = m_model.positions.size(); //size +1
 			m_triMesh.save_he(half_edge);
 		}
+		
 	}
 	//auto tempp = m_triMesh.get_model_indices();
 
 	std::cout << "Successful split of: " << v_X << ", " << v_Y << std::endl;
 	return true;
+}
+
+void GridMesh::UpdateIndices()
+{
+	//for each face
+	//get the 3 vertices
+	//save them in a vector
+	//pass this vector to model and update indices
+	auto indices = m_triMesh.get_model_indices();
+	m_model.indices = indices;
+	Mesh::UpdateModel();
 }
 
 

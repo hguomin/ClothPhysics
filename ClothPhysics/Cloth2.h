@@ -31,7 +31,9 @@ private:
 	std::vector<std::shared_ptr<Particle>> m_particles;
 	std::vector<std::shared_ptr<Spring>> m_constraints;
 	void CutConstraints(std::shared_ptr<Particle> old_particle, std::shared_ptr<Particle> new_particle, const glm::vec3 cut_plane_normal);
-
+	bool ParticleAbovePlane(const std::shared_ptr<Particle> particle, const glm::vec3 plane, const glm::vec3 on_plane);
+	bool isBend(const std::shared_ptr<Spring> spr);
+	bool BelowPlane(const glm::vec3& test_point, const glm::vec3& point_on_plane, const glm::vec3& plane_normal);
 
 	void Wind(glm::vec3 direction);
 	std::vector<glm::vec3> ExtractPositions();

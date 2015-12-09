@@ -46,8 +46,8 @@ int main(int argc, char ** argv[])
 	Transform transform;
 	Keyboard keyboard;
 	Mouse mouse;
-	const unsigned cloth_size = 3;
-	Cloth2 cloth(cloth_size, cloth_size, cloth_size, cloth_size);
+	const unsigned cloth_size = 4;
+	Cloth2 cloth(1, 1, cloth_size, cloth_size);
 
 	float counter = 0.0f;
 	Mesh monkey("./models/monkey3.obj");
@@ -55,15 +55,15 @@ int main(int argc, char ** argv[])
 
 	std::cout << "init complete" << std::endl;
 
-	float previousTicks = SDL_GetTicks();
-	srand(time(NULL));
+	float previousTicks =(float) SDL_GetTicks();
+	srand((unsigned int)time(NULL));
 
 	glm::vec3 wind(0,0,0);
 
 	while (!display.IsClosed())
 	{
 		//time handling
-		float currentTicks = SDL_GetTicks();
+		float currentTicks = (float)SDL_GetTicks();
 		float frameTime = currentTicks - previousTicks;
 		previousTicks = currentTicks;
 		float totalDeltaTime = frameTime / DESIRED_FRAME_TIME;
@@ -83,6 +83,8 @@ int main(int argc, char ** argv[])
 				mouse.HandleEvent(e, camera);
 			}
 		}
+
+		
 
 		const Uint8* currentKeyStates = SDL_GetKeyboardState(NULL);
 
@@ -113,11 +115,14 @@ int main(int argc, char ** argv[])
 		{
 			if (currentKeyStates[SDL_SCANCODE_9])
 			{
-
+				std::cout << "Split Pressed" << std::endl;
 				cloth.SplitVert(1, 1);
+				cloth.SplitVert(2, 1);
 				only_once = false;
+				std::cout << "All split Done" << std::endl;
 			}
 		}
+		std::cout << "After Split" << std::endl;
 
 		sky.Draw(transform, camera);
 		
@@ -143,7 +148,7 @@ int main(int argc, char ** argv[])
 
 		display.Update();
 
-
+		
 		counter += 0.001f;
 	}
 	return 0;

@@ -41,6 +41,11 @@ public:
 		p2->addForce(-damp_force);
 	}
 
+	SpringType getType() { return type; }
+
+	void setParticle_1(std::shared_ptr<Particle> new_p1) { p1 = new_p1; }
+	void setParticle_2(std::shared_ptr<Particle> new_p2) { p2 = new_p2; }
+
 	std::shared_ptr<Particle> p1;
 	std::shared_ptr<Particle> p2;
 private:

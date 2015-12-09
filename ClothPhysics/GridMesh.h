@@ -29,6 +29,7 @@ public:
 
 protected:
 	void InitGridMesh(unsigned int height, unsigned int width);
+	void UpdateIndices();
 
 private:
 	void CalculateNormals();
@@ -36,6 +37,7 @@ private:
 	unsigned int m_height;
 	unsigned int m_width;
 
+	
 	
 	trimesh::trimesh_t m_triMesh;
 
