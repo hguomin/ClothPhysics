@@ -5,7 +5,7 @@
 #include <string>
 #include "Texture.h"
 #include "Mesh.h"
-#include "Shader.h"
+#include "Skybox_Shader.h"
 
 class Skybox : public Mesh
 {
@@ -29,7 +29,7 @@ public:
 private:
 	CubemapTexture* m_cubemap;
 	Mesh* m_box;
-	Shader* m_shader;
+	Skybox_Shader* m_shader;
 };
 #endif //SKYBOX_H
 

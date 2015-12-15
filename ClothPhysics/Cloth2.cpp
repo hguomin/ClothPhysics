@@ -1,5 +1,6 @@
 #include "Cloth2.h"
 #include <iostream>
+#include <deque>
 
 Cloth2::Cloth2(float width, float height, unsigned int particles_width, unsigned int particles_height)
 	: GridMesh(particles_height, particles_width), m_width(width), m_height(height), m_particles_width(particles_width), m_particles_height(particles_height)
@@ -12,18 +13,7 @@ Cloth2::Cloth2(float width, float height, unsigned int particles_width, unsigned
 		}
 	}
 
-	for (unsigned int  y = 0; y < particles_height; y++)
-	{
-		for (unsigned int  x = 0; x < particles_width; x++)
-		{
-			glm::vec3 temp = glm::vec3(
-				width*((float)x / (float)particles_width),
-				0.0f,
-				-height*((float)y / (float)particles_height));
-			getParticleAt(x, y)->setPosition(temp);
-			getParticleAt(x, y)->setLastPosition(temp);
-		}
-	}
+	setStartPosition();
 	//create constraints
 	for (unsigned int  y = 0; y < particles_height; y++)
 	{
@@ -75,14 +65,36 @@ Cloth2::Cloth2(float width, float height, unsigned int particles_width, unsigned
 
 	//making the top three on each side fixed
 	getParticleAt(0, 0)->makeUnmovable();
+	getParticleAt(1, 0)->makeUnmovable();
+
 	getParticleAt(m_particles_width - 1, 0)->makeUnmovable();
+	getParticleAt(m_particles_width - 2, 0)->makeUnmovable();
 	
+	ball_position = glm::vec3(2, -3.0f, -2);
+	ball_size = 1.0f;
+
 	GridMesh::UpdatePositions(ExtractPositions());
 }
 
 
 Cloth2::~Cloth2()
 {
+}
+
+void Cloth2::setStartPosition()
+{
+	for (unsigned int y = 0; y < m_particles_height; y++)
+	{
+		for (unsigned int x = 0; x < m_particles_width; x++)
+		{
+			glm::vec3 temp = glm::vec3(
+				m_width*((float)x / (float)m_particles_width),
+				0.0f,
+				-m_height*((float)y / (float)m_particles_height));
+			getParticleAt(x, y)->setPosition(temp);
+			getParticleAt(x, y)->setLastPosition(temp);
+		}
+	}
 }
 
 void Cloth2::makeConstraint(std::shared_ptr<Particle> p1, std::shared_ptr<Particle> p2, SpringType type)
@@ -106,9 +118,20 @@ std::vector<glm::vec3> Cloth2::ExtractPositions()
 	return temp;
 }
 
-void Cloth2::TimeStep(float dt)
+std::vector<glm::vec3> Cloth2::ExtractNormals()
 {
-	ForceConstraints();
+	std::vector<glm::vec3> temp;
+
+	for (auto it = m_particles.cbegin(); it != m_particles.cend(); it++)
+	{
+		temp.push_back((*it)->getNormal());
+	}
+	return temp;
+}
+
+void Cloth2::TimeStep(float dt, unsigned int numIterations)
+{
+	ForceConstraints(numIterations);
 	for (auto it = m_particles.cbegin(); it != m_particles.cend(); it++)
 	{
 		(*it)->timeStep(dt, 0.1f); //this could go wrong
@@ -116,9 +139,9 @@ void Cloth2::TimeStep(float dt)
 	
 }
 
-void Cloth2::ForceConstraints()
+void Cloth2::ForceConstraints(unsigned int numIterations)
 {
-	for (unsigned int i = 0; i < 3; i++) //number of times we want to iterate over the constraints
+	for (unsigned int i = 0; i < numIterations; i++) //number of times we want to iterate over the constraints
 	{
 		for (auto it = m_constraints.cbegin(); it != m_constraints.cend(); it++)
 		{
@@ -135,27 +158,22 @@ void Cloth2::AddForce(glm::vec3 &force)
 	}
 }
 
-void Cloth2::Update(float dt, glm::vec3 wind)
+void Cloth2::Update(float dt, glm::vec3 wind, unsigned int numIterations)
 {
 	AddForce(glm::vec3(0, GRAVITY, 0));
-	//Wind(wind);
-	std::shared_ptr<Particle> temp = getParticleAt((m_particles_width - 1)/2, (m_particles_height - 1)/2);
-	temp->addForce(wind);
-	TimeStep(dt);
+	Wind(wind);
+	TimeStep(dt, numIterations);
 
-	BallCollision(glm::vec3(5,-5.0f,-5),1.0f);
-
+	BallCollision();
+	//UpdateTextureCoordinates();
+	CalculatePerVertexNormals();
 	GridMesh::UpdatePositions(ExtractPositions());
+	GridMesh::UpdateNormals(ExtractNormals());
 }
 
 void Cloth2::print()
 {
-	std::vector<glm::vec3> temp = ExtractPositions();
-
-	glm::vec3 i = temp[8];
-		std::cout << i.x << " " << i.y << " " << i.z << "\n";
-	std::cout << std::endl;
-	//GridMesh::print();
+	
 }
 
 glm::vec3 Cloth2::CalculateTriangleNormal(std::shared_ptr<Particle> p1, std::shared_ptr<Particle> p2, std::shared_ptr<Particle> p3)
@@ -194,15 +212,301 @@ void Cloth2::Wind(glm::vec3 direction)
 	}
 }
 
-void Cloth2::BallCollision(glm::vec3 position, float radius)
+void Cloth2::BallCollision()
 {
 	for each (std::shared_ptr<Particle> particle in m_particles)
 	{
-		glm::vec3 forceVector = particle->getPosition() - position;
-		if (glm::length(forceVector) < radius)
+		glm::vec3 forceVector = particle->getPosition() - ball_position;
+		if (glm::length(forceVector) < ball_size)
 		{
-			forceVector = (forceVector / glm::length(forceVector))* radius;
-			particle->setPosition(position + forceVector);
+			forceVector = (forceVector / glm::length(forceVector))* ball_size;
+			particle->setPosition(ball_position + forceVector);
 		}
 	}
+}
+
+void Cloth2::CalculatePerVertexNormals()
+{
+	//fixing  the top left corner
+	{
+		const unsigned int index = 0; // 0 + 0 * m_particles_width;
+		unsigned int east = index + 1;
+		unsigned int south = index + m_particles_width;
+		const glm::vec3 center_pos = m_particles.at(index)->getPosition();
+		glm::vec3 right = center_pos - m_particles.at(east)->getPosition();
+		glm::vec3 down = center_pos - m_particles.at(south)->getPosition();
+		glm::vec3 plane_normal = glm::normalize(glm::cross(right, down));
+		m_particles.at(index)->SetNormal(plane_normal);
+	}
+	//fixing the top right corner
+	{
+		const unsigned int index = m_particles_width - 1; // (m_particles_width - 1) + 0*m_particles_width
+		unsigned int west = index - 1;
+		unsigned int south_west = (index - 1) + m_particles_width;
+		unsigned int south = index + m_particles_width;
+
+		const glm::vec3 center_pos = m_particles.at(index)->getPosition();
+		glm::vec3 left = center_pos - m_particles.at(west)->getPosition();
+		glm::vec3 down_left = center_pos - m_particles.at(south_west)->getPosition();
+		glm::vec3 down = center_pos - m_particles.at(south)->getPosition();
+		//the triangle normals
+		glm::vec3 down_left_normal = glm::normalize(glm::cross(down_left, left));
+		glm::vec3 down_middle_normal = glm::normalize(glm::cross(down, down_left));
+		glm::vec3 sumNormal = (down_left_normal + down_middle_normal) / 2.0f;
+
+		m_particles.at(index)->SetNormal(sumNormal);
+	}
+	//fixing the bottom left corner
+	{
+		const unsigned int index = (m_particles_height - 1)*m_particles_width; // 0 + (m_particles_height -1)*m_particles_width
+		unsigned int north = index - m_particles_width;
+		unsigned int north_east = (index + 1) - m_particles_width;
+		unsigned int east = index + 1;
+
+		const glm::vec3 center_pos = m_particles.at(index)->getPosition();
+		//getting the vectors so we can calculate the normals
+		glm::vec3 up = center_pos - m_particles.at(north)->getPosition();
+		glm::vec3 up_right = center_pos - m_particles.at(north_east)->getPosition();
+		glm::vec3 right = center_pos - m_particles.at(east)->getPosition();
+
+		//calculating the normals
+		glm::vec3 top_middle_normal = glm::normalize(glm::cross(up, up_right));
+		glm::vec3 top_right_normal = glm::normalize(glm::cross(up_right, right));
+
+		glm::vec3 sumNormal = (top_middle_normal + top_right_normal) / 2.0f;
+		m_particles.at(index)->SetNormal(sumNormal);
+	}
+	//fixing the bottom right corner
+	{
+		const unsigned int index = m_particles_height*m_particles_width - 1; // (m_particles_width - 1) + (m_particles_height-1)*m_particles_width
+		unsigned int west = index - 1;
+		unsigned int north = index - m_particles_width;
+		const glm::vec3 center_pos = m_particles.at(index)->getPosition();
+		//getting the vectors so we can calculate the normals
+		glm::vec3 left = center_pos - m_particles.at(west)->getPosition();
+		glm::vec3 up = center_pos - m_particles.at(north)->getPosition();
+		//calculating the normals
+		glm::vec3 top_left_normal = glm::normalize(glm::cross(left, up));
+		m_particles.at(index)->SetNormal(top_left_normal);
+	}
+
+	//fixing the top border
+	for (unsigned int i = 1; i < m_particles_width - 1; i++)
+	{
+		const unsigned int index = i; //i + 0*m_particles_width
+		unsigned int west = index - 1;
+		unsigned int south_west = (index - 1) + m_particles_width;
+		unsigned int south = index + m_particles_width;
+		unsigned int east = index + 1;
+
+		const glm::vec3 center_pos = m_particles.at(index)->getPosition();
+
+		glm::vec3 left = center_pos - m_particles.at(west)->getPosition();
+		glm::vec3 right = center_pos - m_particles.at(east)->getPosition();
+		glm::vec3 down = center_pos - m_particles.at(south)->getPosition();
+		glm::vec3 down_left = center_pos - m_particles.at(south_west)->getPosition();
+
+		glm::vec3 down_right_normal = glm::normalize(glm::cross(right, down));
+		glm::vec3 down_middle_normal = glm::normalize(glm::cross(down, down_left));
+		glm::vec3 down_left_normal = glm::normalize(glm::cross(down_left, left));
+
+		glm::vec3 sumNormal = (	down_right_normal + down_left_normal + down_middle_normal) / 3.0f;
+		m_particles.at(index)->SetNormal(sumNormal);
+	}
+
+	//fixing the left border
+	for (unsigned int j = 1; j < m_particles_height - 1; j++)
+	{
+		const unsigned int index = j*m_particles_width; //0 + j*m_particles_width
+		unsigned int north = index - m_particles_width;
+		unsigned int north_east = (index + 1) - m_particles_width;
+		unsigned int east = index + 1;
+		unsigned int south = index + m_particles_width;
+
+		const glm::vec3 center_pos = m_particles.at(index)->getPosition();
+
+		glm::vec3 up = center_pos - m_particles.at(north)->getPosition();
+		glm::vec3 up_right = center_pos - m_particles.at(north_east)->getPosition();
+		glm::vec3 right = center_pos - m_particles.at(east)->getPosition();
+		glm::vec3 down = center_pos - m_particles.at(south)->getPosition();
+
+		//calculating the normals
+		glm::vec3 top_middle_normal = glm::normalize(glm::cross(up, up_right));
+		glm::vec3 top_right_normal = glm::normalize(glm::cross(up_right, right));
+
+		glm::vec3 down_right_normal = glm::normalize(glm::cross(right, down));
+
+		//normalize the normals and add them together
+		glm::vec3 sumNormal = (top_middle_normal + top_right_normal +
+			down_right_normal) / 3.0f;
+		m_particles.at(index)->SetNormal(sumNormal);
+	}
+
+	//right border
+	for (unsigned int j = 1; j < m_particles_height - 1; j++)
+	{
+		const unsigned int index = (m_particles_width-1) + j*m_particles_width;
+		unsigned int north = index - m_particles_width;
+		unsigned int west = index - 1;
+		unsigned int south_west = (index - 1) + m_particles_width;
+		unsigned int south = index + m_particles_width;
+
+		const glm::vec3 center_pos = m_particles.at(index)->getPosition();
+		//getting the vectors so we can calculate the normals
+		glm::vec3 left = center_pos - m_particles.at(west)->getPosition();
+		glm::vec3 up = center_pos - m_particles.at(north)->getPosition();
+		glm::vec3 down = center_pos - m_particles.at(south)->getPosition();
+		glm::vec3 down_left = center_pos - m_particles.at(south_west)->getPosition();
+
+		//calculating the normals
+		glm::vec3 top_left_normal = glm::normalize(glm::cross(left, up));
+		glm::vec3 down_middle_normal = glm::normalize(glm::cross(down, down_left));
+		glm::vec3 down_left_normal = glm::normalize(glm::cross(down_left, left));
+		//normalize the normals and add them together
+		glm::vec3 sumNormal = (top_left_normal + down_left_normal + down_middle_normal) / 3.0f;
+		m_particles.at(index)->SetNormal(sumNormal);
+	}
+
+	//bottom border
+	for (unsigned int i = 1; i < m_particles_width - 1; i++)
+	{
+		const unsigned int index = i + (m_particles_height-1)*m_particles_width;
+		unsigned int north = index - m_particles_width;
+		unsigned int north_east = (index + 1) - m_particles_width;
+		unsigned int west = index - 1;
+		unsigned int east = index + 1;
+
+		const glm::vec3 center_pos = m_particles.at(index)->getPosition();
+		//getting the vectors so we can calculate the normals
+		glm::vec3 left = center_pos - m_particles.at(west)->getPosition();
+		glm::vec3 up = center_pos - m_particles.at(north)->getPosition();
+		glm::vec3 up_right = center_pos - m_particles.at(north_east)->getPosition();
+		glm::vec3 right = center_pos - m_particles.at(east)->getPosition();
+
+		//calculating the normals
+		glm::vec3 top_left_normal = glm::normalize(glm::cross(left, up));
+		glm::vec3 top_middle_normal = glm::normalize(glm::cross(up, up_right));
+		glm::vec3 top_right_normal = glm::normalize(glm::cross(up_right, right));
+
+		//normalize the normals and add them together
+		glm::vec3 sumNormal = (top_left_normal + top_middle_normal + top_right_normal) / 3.0f;
+		m_particles.at(index)->SetNormal(sumNormal);
+	}
+
+	//start by ignoring the borders because borders are annoying
+	for (unsigned int i = 1; i < m_particles_height - 1; i++)
+	{
+		for (unsigned int j = 1; j < m_particles_width - 1; j++)
+		{
+			const unsigned int index = j + i*m_particles_width;
+			unsigned int north = index - m_particles_width;
+			unsigned int north_east = (index + 1) - m_particles_width;
+			unsigned int west = index - 1;
+			unsigned int south_west = (index - 1) + m_particles_width;
+			unsigned int south = index + m_particles_width;
+			unsigned int east = index + 1;
+
+			const glm::vec3 center_pos = m_particles.at(index)->getPosition();
+			//getting the vectors so we can calculate the normals
+			glm::vec3 left = center_pos - m_particles.at(west)->getPosition();
+			glm::vec3 up = center_pos - m_particles.at(north)->getPosition();
+			glm::vec3 up_right = center_pos - m_particles.at(north_east)->getPosition();
+			glm::vec3 right = center_pos - m_particles.at(east)->getPosition();
+			glm::vec3 down = center_pos - m_particles.at(south)->getPosition();
+			glm::vec3 down_left = center_pos - m_particles.at(south_west)->getPosition();
+
+			//calculating the normals
+			glm::vec3 top_left_normal = glm::normalize(glm::cross(left, up));
+			glm::vec3 top_middle_normal = glm::normalize(glm::cross(up, up_right));
+			glm::vec3 top_right_normal = glm::normalize(glm::cross(up_right, right));
+
+			glm::vec3 down_right_normal = glm::normalize(glm::cross(right, down));
+			glm::vec3 down_middle_normal = glm::normalize(glm::cross(down, down_left));
+			glm::vec3 down_left_normal = glm::normalize(glm::cross(down_left, left));
+
+			//normalize the normals and add them together
+			glm::vec3 sumNormal = (top_left_normal + top_middle_normal + top_right_normal +
+				down_right_normal + down_left_normal + down_middle_normal) / 6.0f;
+			m_particles.at(index)->SetNormal(sumNormal);
+		}
+	}
+	
+	
+	std::deque<glm::vec3> temp;
+	//Trying something here
+	//what if we also take into concideration nearby particle normals
+	for (unsigned int i = 1; i < m_particles_height - 1; i++)
+	{
+		for (unsigned int j = 1; j < m_particles_width - 1; j++)
+		{
+			const unsigned int index = j + i*m_particles_width;
+			unsigned int north = index - m_particles_width;
+			unsigned int north_east = (index + 1) - m_particles_width;
+			unsigned int north_west = (index - 1) - m_particles_width;
+			unsigned int west = index - 1;
+			unsigned int south_west = (index - 1) + m_particles_width;
+			unsigned int south_east = (index + 1) + m_particles_width;
+			unsigned int south = index + m_particles_width;
+			unsigned int east = index + 1;
+
+			//calculating the normals
+			glm::vec3 current_normal = m_particles.at(index)->getNormal();
+			glm::vec3 top_normal = m_particles.at(north)->getNormal();
+			glm::vec3 left_normal = m_particles.at(west)->getNormal();
+			glm::vec3 down_normal = m_particles.at(south)->getNormal();
+			glm::vec3 right_normal = m_particles.at(east)->getNormal();
+			glm::vec3 top_left_normal = m_particles.at(north_west)->getNormal();
+			glm::vec3 top_right_normal = m_particles.at(north_east)->getNormal();
+			glm::vec3 down_left_normal = m_particles.at(south_west)->getNormal();
+			glm::vec3 down_right_normal = m_particles.at(south_east)->getNormal();
+
+			glm::vec3 average = (current_normal + top_normal + left_normal + down_normal + right_normal +
+				top_left_normal + top_right_normal + down_left_normal + down_right_normal) / 9.0f;
+			glm::normalize(average);
+			temp.push_back(average);
+		}
+	}
+	for (unsigned int i = 1; i < m_particles_height - 1; i++)
+	{
+		for (unsigned int j = 1; j < m_particles_width - 1; j++)
+		{
+			const unsigned int index = j + i*m_particles_width;
+
+			m_particles.at(index)->SetNormal(temp.front());
+			temp.pop_front();
+		}
+	}
+	
+}
+
+void Cloth2::UpdateTextureCoordinates()
+{
+	//using a central difference approach we can find the acceleration of a particle and use the previous position and move the texture coordinate in that
+	//direction
+	//ignoring borders cause they are annoying
+	for (unsigned int i = 1; i < m_particles_height -2; i++)
+	{
+		for (unsigned int j = 1; j < m_particles_width - 2; j++)
+		{
+			const unsigned int index = j + i*m_particles_width;
+			const unsigned int west = index - 1;
+			const unsigned int east = index + 1;
+			const unsigned int north = index - m_particles_width;
+			const unsigned int south = index + m_particles_width;
+			glm::vec2 currentTexCoord = *m_particles.at(index)->GetTexCoord();
+			glm::vec2 accX = *m_particles.at(east)->GetTexCoord() - *m_particles.at(west)->GetTexCoord();
+			accX = accX / 2.0f;
+
+			glm::vec2 accY = *m_particles.at(north)->GetTexCoord() - *m_particles.at(south)->GetTexCoord();
+			accY = accY / 2.0f;
+			
+			glm::vec2 new_TexCoord = (accX + accY) / 2.0f;
+			m_particles.at(index)->SetTexCoord(currentTexCoord - new_TexCoord);
+		}
+	}
+}
+
+void Cloth2::Upload()
+{
+	GridMesh::UploadToGPU();
 }

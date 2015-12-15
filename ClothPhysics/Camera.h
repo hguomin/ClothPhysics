@@ -24,6 +24,8 @@ public:
 	void SetPosition(const glm::vec3& pos) { m_position = pos; }
 	glm::vec3 GetPosition() { return m_position; }
 
+	glm::vec3 GetPosition() const { return m_position; }
+
 	void SetForward(const glm::vec3& view) { m_forward = view; }
 	glm::vec3 GetForward() { return m_forward; }
 	glm::vec3 GetBackwards() { return -m_forward; }

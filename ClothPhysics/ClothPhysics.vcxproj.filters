@@ -19,15 +19,18 @@
     <Filter Include="Image Handeling">
       <UniqueIdentifier>{337690c4-0e87-49eb-9d95-4120d185baa3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Different Shaders">
+      <UniqueIdentifier>{030b0136-985d-4a3c-b1df-61223c3e187b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Different Shaders">
+      <UniqueIdentifier>{f35464ec-9afa-428a-907a-76e70a7c736a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Display.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Shader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Mesh.cpp">
@@ -60,12 +63,21 @@
     <ClCompile Include="Particle.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Shader.cpp">
+      <Filter>Source Files\Different Shaders</Filter>
+    </ClCompile>
+    <ClCompile Include="Phong_Shader.cpp">
+      <Filter>Source Files\Different Shaders</Filter>
+    </ClCompile>
+    <ClCompile Include="Basic_Shader.cpp">
+      <Filter>Source Files\Different Shaders</Filter>
+    </ClCompile>
+    <ClCompile Include="Skybox_Shader.cpp">
+      <Filter>Source Files\Different Shaders</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Display.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Shader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Mesh.h">
@@ -110,12 +122,30 @@
     <ClInclude Include="Vertex.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Shader.h">
+      <Filter>Header Files\Different Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Phong_Shader.h">
+      <Filter>Header Files\Different Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Basic_Shader.h">
+      <Filter>Header Files\Different Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Skybox_Shader.h">
+      <Filter>Header Files\Different Shaders</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\space.frag">
       <Filter>Shaders</Filter>
     </None>
     <None Include="shaders\space.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\phong.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\phong.vert">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

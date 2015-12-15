@@ -9,12 +9,12 @@ uniform mat4 projection;
 uniform mat4 model;
 
 //output to fragment shader
-smooth out vec3 uv;
+smooth out vec2 uv;
 
 void main()
 {
 	mat4 MVP = projection * view * model;
 	gl_Position = MVP * vec4(position, 1.0);
 
-	uv = position;
+	uv = texCoord;
 }

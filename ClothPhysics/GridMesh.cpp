@@ -52,11 +52,9 @@ GridMesh::~GridMesh()
 
 void GridMesh::Draw()
 {
-	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 	Mesh::UpdateModel(GL_DYNAMIC_DRAW);
 	Mesh::Draw(GL_TRIANGLES);
-	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 }
 
@@ -79,6 +77,12 @@ void GridMesh::UpdatePositions(std::vector<glm::vec3> &pos)
 {
 	assert(pos.size() == m_model.positions.size());
 	m_model.positions = pos;
+}
+
+void GridMesh::UpdateNormals(std::vector<glm::vec3> &normal)
+{
+	assert(normal.size() == m_model.normals.size());
+	m_model.normals = normal;
 }
 
 void GridMesh::print()

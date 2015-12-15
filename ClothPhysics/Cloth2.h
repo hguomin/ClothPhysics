@@ -17,9 +17,20 @@ public:
 	Cloth2(float width, float height, unsigned int particles_width, unsigned int particles_height);
 	~Cloth2();
 
-	void Update(float dt, glm::vec3 wind);
+	void Update(float dt, glm::vec3 wind, unsigned int numIterations);
 
 	void print();
+	void CalculatePerVertexNormals();
+
+	void UpdateTextureCoordinates();
+
+	void Upload();
+
+	glm::vec3 ball_position;
+	float ball_size;
+
+	void setStartPosition();
+
 private:
 	float m_width;
 	float m_height;
@@ -32,15 +43,18 @@ private:
 
 	void Wind(glm::vec3 direction);
 	std::vector<glm::vec3> ExtractPositions();
+	std::vector<glm::vec3> ExtractNormals();
 	glm::vec3 CalculateTriangleNormal(std::shared_ptr<Particle> p1, std::shared_ptr<Particle> p2, std::shared_ptr<Particle> p3);
 	void AddWind(std::shared_ptr<Particle> p1, std::shared_ptr<Particle> p2, std::shared_ptr<Particle> p3, glm::vec3 direction);
 	std::shared_ptr<Particle> getParticleAt(unsigned int x, unsigned int y);
-	void TimeStep(float dt);
+	void TimeStep(float dt, unsigned int numIterations);
 	void AddForce(glm::vec3& force);
 
-	void ForceConstraints();
+	void ForceConstraints(unsigned int numIterations);
 
-	void BallCollision(glm::vec3 position, float radius);
+	
+
+	void BallCollision();
 };
 
 #endif //CLOTH2_H

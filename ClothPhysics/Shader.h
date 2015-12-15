@@ -15,24 +15,15 @@ public:
 	~Shader();
 
 	void Use();
-	void Update(const Transform& transform, const Camera& camera);
-
-private:
+	virtual void Update(const Transform& transform, const Camera& camera) = 0;
+protected:
+	virtual void LoadUniforms() = 0; //pure virtual
 	static const unsigned int NUM_SHADERS = 2;
-	Shader(const Shader& other) {}
-
-	enum
-	{
-		MODEL_U,
-		VIEW_U,
-		PROJECTION_U,
-		CUBEMAP_U,
-
-		NUM_UNIFORMS
-	};
-
 	GLuint m_program;
 	GLuint m_shaders[NUM_SHADERS];
-	GLuint m_uniforms[NUM_UNIFORMS];
+	
+private:
+	
+	Shader(const Shader& other) {}
 };
 #endif //SHADER_H

@@ -17,6 +17,7 @@ public:
 
 	std::vector<glm::vec3> GetPositions();
 	void UpdatePositions(std::vector<glm::vec3> &position);
+	void UpdateNormals(std::vector<glm::vec3> &normals);
 
 	unsigned int GetHeight(){ return m_height; }
 	unsigned int GetWidth() { return m_width; }

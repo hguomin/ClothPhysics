@@ -15,6 +15,9 @@ public:
 	glm::vec3* GetPosition() { return &m_position; }
 	glm::vec2* GetTexCoord() { return &m_texCoord; }
 	glm::vec3* GetNormal() { return &m_normal; }
+
+	void SetNormal(glm::vec3 norm) { m_normal = norm; }
+	void SetTexCoord(glm::vec2 coord) { m_texCoord = coord; }
 	
 protected:
 	

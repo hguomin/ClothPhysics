@@ -25,6 +25,7 @@ public:
 	glm::vec3 getVelocity() { return m_velocity; }
 	glm::vec3 getAcceleration() { return m_acceleration; }
 	glm::vec3 getPosition() { return *Vertex::GetPosition(); }
+	glm::vec3 getNormal() { return *Vertex::GetNormal(); }
 	glm::vec3 getLastPosition() { return m_lastPosition; }
 	glm::vec3 getForce() { return m_force; }
 

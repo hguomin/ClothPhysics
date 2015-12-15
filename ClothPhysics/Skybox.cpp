@@ -35,7 +35,7 @@ bool Skybox::SkyboxInit(
 		return false;
 	}
 	m_box = new Mesh("./models/box.obj");
-	m_shader = new Shader("./shaders/skybox");
+	m_shader = new Skybox_Shader("./shaders/skybox");
 	return true;
 
 }
