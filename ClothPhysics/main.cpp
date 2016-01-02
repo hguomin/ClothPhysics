@@ -172,7 +172,7 @@ int main(int argc, char ** argv[])
 		//shader.Update(transform, camera);
 		
 		phong.Use();
-		phong.Update(transform, camera);
+		phong.UpdateValues(transform, camera);
 
 		//texture.Use();
 		//monkey.Draw();

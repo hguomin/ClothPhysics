@@ -1,29 +1,13 @@
 #pragma once
-#include "Shader.h"
+#include "Basic_Shader.h"
+
 class Skybox_Shader :
-	public Shader
+	public Basic_Shader
 {
 public:
-	Skybox_Shader(const std::string& fileName) : Shader(fileName)
-	{
-		LoadUniforms();
-	};
+	Skybox_Shader(const std::string& filePath);
 	~Skybox_Shader();
-	
-	void Update(const Transform& transform, const Camera& camera) override;
-protected:
-	void LoadUniforms() override;
-private:
-	
-	enum Uniform
-	{
-		MODEL_U,
-		VIEW_U,
-		PROJECTION_U,
-		CUBEMAP_U,
 
-		NUM_UNIFORMS
-	};
-	GLuint m_uniforms[NUM_UNIFORMS];
+	//void UpdateValues(const Transform& transform, const Camera& camera); Should use newBasic_Shaders
 };
 

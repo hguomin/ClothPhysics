@@ -51,7 +51,7 @@ void Skybox::Draw(Transform& trans, Camera& cam)
 	glDisable(GL_CULL_FACE);
 	Use(); //enable cubemap
 	m_shader->Use();
-	m_shader->Update(trans, cam);
+	m_shader->UpdateValues(trans, cam);
 	m_box->Draw();
 	glEnable(GL_CULL_FACE);
 	glEnable(GL_DEPTH_TEST);

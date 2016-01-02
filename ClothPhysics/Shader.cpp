@@ -2,26 +2,73 @@
 #include <iostream>
 #include <fstream>
 
-static void CheckShaderError(GLuint shader, GLuint flag, bool isProgram, const std::string& errorMessage);
-static std::string LoadShader(const std::string& fileName);
-static GLuint CreateShader(const std::string& text, unsigned int type);
 
-Shader::Shader(const std::string& fileName)
+
+Shader::Shader()
+{
+	m_totalShaders = 0;
+	m_shaders[VERTEX_SHADER] = 0;
+	m_shaders[FRAGMENT_SHADER] = 0;
+	m_shaders[GEOMETRY_SHADER] = 0;
+	m_attributeList.clear();
+	m_uniformLocationList.clear();
+}
+
+
+Shader::~Shader()
+{
+	m_attributeList.clear();
+	m_uniformLocationList.clear();
+}
+
+void Shader::LoadFromString(GLenum type, const std::string& source)
+{
+	GLuint shader = glCreateShader(type);
+
+	const char* ptmp = source.c_str();
+	glShaderSource(shader, 1, &ptmp, NULL);
+
+	glCompileShader(shader);
+	PrintError(shader);
+	m_shaders[m_totalShaders++] = shader;
+}
+
+void Shader::CreateAndLinkProgram()
 {
 	m_program = glCreateProgram();
-	m_shaders[0] = CreateShader(LoadShader(fileName + ".vert"), GL_VERTEX_SHADER);
-	m_shaders[1] = CreateShader(LoadShader(fileName + ".frag"), GL_FRAGMENT_SHADER);
-
-	for (unsigned int i = 0; i < NUM_SHADERS; i++)
+	if (m_shaders[VERTEX_SHADER] != 0)
 	{
-		glAttachShader(m_program, m_shaders[i]);
+		glAttachShader(m_program, m_shaders[VERTEX_SHADER]);
+	}
+	if (m_shaders[FRAGMENT_SHADER] != 0)
+	{
+		glAttachShader(m_program, m_shaders[FRAGMENT_SHADER]);
+	}
+	if (m_shaders[GEOMETRY_SHADER] != 0)
+	{
+		glAttachShader(m_program, m_shaders[GEOMETRY_SHADER]);
 	}
 
 	glLinkProgram(m_program);
-	CheckShaderError(m_program, GL_LINK_STATUS, true, "Error: Program linking failed!: ");
+	PrintError(m_program);
 
-	glValidateProgram(m_program);
-	CheckShaderError(m_program, GL_VALIDATE_STATUS, true, "Error: Program is invalid!: ");
+	glDeleteShader(m_shaders[VERTEX_SHADER]);
+	glDeleteShader(m_shaders[FRAGMENT_SHADER]);
+	glDeleteShader(m_shaders[GEOMETRY_SHADER]);
+}
+
+void Shader::PrintError(GLuint programOrShader)
+{
+	GLint status;
+	glGetShaderiv(programOrShader, GL_COMPILE_STATUS, &status);
+	if (status == GL_FALSE) {
+		GLint infoLogLength;
+		glGetShaderiv(programOrShader, GL_INFO_LOG_LENGTH, &infoLogLength);
+		GLchar *infoLog = new GLchar[infoLogLength];
+		glGetShaderInfoLog(programOrShader, infoLogLength, NULL, infoLog);
+		std::cerr << "Compile log: " << infoLog << std::endl;
+		delete[] infoLog;
+	}
 }
 
 void Shader::Use()
@@ -29,88 +76,66 @@ void Shader::Use()
 	glUseProgram(m_program);
 }
 
-Shader::~Shader()
+void Shader::UnUse()
 {
-	for (unsigned int i = 0; i < NUM_SHADERS; i++)
-	{
-		glDetachShader(m_program, m_shaders[i]);
-		glDeleteShader(m_shaders[i]);
-	}
+	glUseProgram(0);
+}
 
+void Shader::AddAttribute(const std::string & attribute)
+{
+	m_attributeList[attribute];
+}
+
+void Shader::AddUniform(const std::string & uniform)
+{
+	m_uniformLocationList[uniform] = glGetUniformLocation(m_program, uniform.c_str());
+}
+
+GLuint Shader::getProgram() const
+{
+	return m_program;
+}
+
+GLuint Shader::operator[](const std::string & attribute)
+{
+	return AttrList(attribute);
+}
+
+GLuint Shader::operator()(const std::string & uniform)
+{
+	return UnifLoc(uniform);
+}
+
+void Shader::DeleteShaderProgram()
+{
 	glDeleteProgram(m_program);
 }
 
-static GLuint CreateShader(const std::string& text, unsigned int type)
+void Shader::LoadFromFile(GLenum whichShader, const std::string & fileName)
 {
-	GLuint shader = glCreateShader(type);
-
-	if (shader == 0)
-	{
-		std::cerr << "Error: Shader creation failed!" << std::endl;
+	std::ifstream fp;
+	fp.open(fileName.c_str(), std::ios_base::in);
+	if (fp) {
+		std::string buffer(std::istreambuf_iterator<char>(fp), (std::istreambuf_iterator<char>()));
+		LoadFromString(whichShader, buffer);
 	}
-
-	const GLchar* shaderSourceStrings[1];
-	GLint shaderSourceStringsLengths[1];
-
-	shaderSourceStrings[0] = text.c_str();
-	shaderSourceStringsLengths[0] = text.length();
-
-	glShaderSource(shader, 1, shaderSourceStrings, shaderSourceStringsLengths);
-	glCompileShader(shader);
-
-	CheckShaderError(shader, GL_COMPILE_STATUS, false, "Error: Shader compilation failed: ");
-
-	return shader;
+	else {
+		std::cerr << "Error loading shader: " << fileName << std::endl;
+	}
+	
 }
 
-
-static std::string LoadShader(const std::string& fileName)
+GLuint Shader::UnifLoc(const std::string& uniform)
 {
-	std::ifstream file;
-	file.open((fileName).c_str());
-
-	std::string output;
-	std::string line;
-
-	if (file.is_open())
-	{
-		while (file.good())
-		{
-			getline(file, line);
-			output.append(line + "\n");
-		}
-	}
-	else
-	{
-		std::cerr << "Unable to load Shader: " << fileName << std::endl;
-	}
-	return output;
+	return m_uniformLocationList[uniform];
 }
 
-static void CheckShaderError(GLuint shader, GLuint flag, bool isProgram, const std::string& errorMessage)
+GLuint Shader::AttrList(const std::string& attrib)
 {
-	GLint success = 0;
-	GLchar error[1024] = { 0 };
+	return m_attributeList[attrib];
+}
 
-	if (isProgram)
-	{
-		glGetProgramiv(shader, flag, &success);
-	}
-	else
-	{
-		glGetShaderiv(shader, flag, &success);
-	}
-
-	if (success == GL_FALSE)
-	{
-		if (isProgram)
-		{
-			glGetProgramInfoLog(shader, sizeof(error), NULL, error);
-		}
-		else
-		{
-			glGetShaderInfoLog(shader, sizeof(error), NULL, error);
-		}
-		std::cerr << errorMessage << ": '" << error << "'" << std::endl;
-	}
+void Shader::UpdateValues(const Transform & transform, const Camera & camera)
+{
+	std::cout << "Calling Update Values for Shader base class...Should not happen" << std::endl;
 }
