@@ -122,7 +122,6 @@ int main(int argc, char ** argv[])
 				std::cout << "All split Done" << std::endl;
 			}
 		}
-		std::cout << "After Split" << std::endl;
 
 		sky.Draw(transform, camera);
 		
