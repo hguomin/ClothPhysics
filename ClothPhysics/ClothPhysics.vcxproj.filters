@@ -66,14 +66,17 @@
     <ClCompile Include="Basic_Shader.cpp">
       <Filter>Source Files\Different Shaders</Filter>
     </ClCompile>
-    <ClCompile Include="Shader.cpp">
-      <Filter>Source Files\Different Shaders</Filter>
-    </ClCompile>
     <ClCompile Include="Skybox_Shader.cpp">
       <Filter>Source Files\Different Shaders</Filter>
     </ClCompile>
     <ClCompile Include="Phong_Shader.cpp">
       <Filter>Source Files\Different Shaders</Filter>
+    </ClCompile>
+    <ClCompile Include="Shader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Cloth_GPU.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -125,14 +128,17 @@
     <ClInclude Include="Basic_Shader.h">
       <Filter>Header Files\Different Shaders</Filter>
     </ClInclude>
-    <ClInclude Include="Shader.h">
-      <Filter>Header Files\Different Shaders</Filter>
-    </ClInclude>
     <ClInclude Include="Skybox_Shader.h">
       <Filter>Header Files\Different Shaders</Filter>
     </ClInclude>
     <ClInclude Include="Phong_Shader.h">
       <Filter>Header Files\Different Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Shader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Cloth_GPU.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
