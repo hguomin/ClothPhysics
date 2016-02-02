@@ -29,6 +29,29 @@ Cloth_GPU::~Cloth_GPU()
 	glDeleteTextures(2, m_texPrevPos);
 }
 
+void Cloth_GPU::InitShaders(float timeStep, glm::vec3& gravity, unsigned int texture_size_x, unsigned int texture_size_y,
+	unsigned int sizeX, unsigned int sizeY, unsigned int particle_width, unsigned int particle_height,
+	float KsStruct, float KsShear, float KsBend, float KdStruct, float KdShear, float KdBend, float DEFAULT_DAMPING)
+{
+	m_massSpringShader.Use();
+		glUniform1f(m_massSpringShader("dt"), timeStep);
+		glUniform3fv(m_massSpringShader("gravity"), 1, &gravity.x);
+		glUniform1i(m_massSpringShader("tex_position_mass"), 0);
+		glUniform1i(m_massSpringShader("tex_pre_position_mass"), 1);
+		glUniform1i(m_massSpringShader("texsize_x"), texture_size_x);
+		glUniform1i(m_massSpringShader("texsize_y"), texture_size_y);
+		glUniform2f(m_massSpringShader("inv_cloth_size"), float(sizeX) / particle_width, float(sizeY) / particle_height);
+		glUniform2f(m_massSpringShader("step"), 1.0f / (texture_size_x - 1.0f), 1.0f / (texture_size_y - 1.0f));
+		glUniform1f(m_massSpringShader("ksStr"), KsStruct);
+		glUniform1f(m_massSpringShader("ksShr"), KsShear);
+		glUniform1f(m_massSpringShader("ksBnd"), KsBend);
+		glUniform1f(m_massSpringShader("kdStr"), KdStruct / 1000.0f);
+		glUniform1f(m_massSpringShader("kdShr"), KdShear / 1000.0f);
+		glUniform1f(m_massSpringShader("kdBnd"), KdBend / 1000.0f);
+		glUniform1f(m_massSpringShader("DEFAULT_DAMPING"), DEFAULT_DAMPING);
+	m_massSpringShader.UnUse();
+}
+
 Cloth_GPU::Cloth_GPU(unsigned int width, unsigned int height, unsigned int particle_width, unsigned int particle_height) :
 	m_width(width), m_height(height),  m_particles_width(particle_width), m_particles_height(particle_height)
 {
@@ -152,14 +175,14 @@ void Cloth_GPU::generateArraysAndBuffers()
 	glGenTransformFeedbacks(1, &m_transformFeedback);
 	glBindTransformFeedback(GL_TRANSFORM_FEEDBACK, m_transformFeedback);
 	const char* varying_names[] = { "out_position_mass", "out_prev_position" };
-	glTransformFeedbackVaryings(massSpringShader.GetProgram(), 2, varying_names, GL_SEPARATE_ATTRIBS);
-	glLinkProgram(massSpringShader.GetProgram());
+	glTransformFeedbackVaryings(m_massSpringShader.getProgram(), 2, varying_names, GL_SEPARATE_ATTRIBS);
+	glLinkProgram(m_massSpringShader.getProgram());
 }
 
-void Cloth_GPU::Draw()
+void Cloth_GPU::Draw(const Transform & transform, const Camera & camera)
 {
-	massSpringShader.Use();
-	glUniformMatrix4fv(massSpringShader("MVP"), 1, GL_FALSE,glm::value_ptr(mMVP)); //detta ska ändras
+	m_massSpringShader.Use();
+	m_massSpringShader.UpdateValues(transform, camera);
 	for (unsigned int i = 0; i < NUM_ITER; i++)
 	{
 		glActiveTexture(GL_TEXTURE0);
@@ -183,16 +206,16 @@ void Cloth_GPU::Draw()
 	GLuint64 elapsed_time = 0.0f;
 	glGetQueryObjectui64v(t_query, GL_QUERY_RESULT, &elapsed_time);
 	float delta_time = float(elapsed_time) / 1000000.0f;
-	massSpringShader.UnUse();
+	m_massSpringShader.UnUse();
 
 	//now time to Render
 	glBindVertexArray(m_vArrayoRender[m_write]);
 	glDisable(GL_DEPTH_TEST); //why am I doing this?!
-	renderShader.Use();
-	glUniformMatrix4fv(renderShader("MVP"), 1, GL_FALSE, glm::value_ptr(mMVP));
+	m_renderShader.Use();
+	m_renderShader.UpdateValues(transform, camera);
 	//draw the geometry
 	glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_SHORT, 0);
-	renderShader.UnUse();
+	m_renderShader.UnUse();
 	glEnable(GL_DEPTH_TEST); //why am I doing this?!
 	
 	glBindVertexArray(0);

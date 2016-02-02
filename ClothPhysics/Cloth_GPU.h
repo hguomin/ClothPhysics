@@ -4,6 +4,9 @@
 #include <vector>
 #include <glm\glm.hpp>
 #include "GL\glew.h"
+
+#include "Spring_Shader.h"
+#include "Phong_Shader.h"
 class Cloth_GPU
 {
 public:
@@ -11,7 +14,11 @@ public:
 	Cloth_GPU(unsigned int width, unsigned int height, unsigned int particl_width, unsigned int particle_height);
 	~Cloth_GPU();
 
-	void Draw();
+	void InitShaders(float timeStep, glm::vec3& gravity, unsigned int texture_size_x, unsigned int texture_size_y,
+		unsigned int sizeX, unsigned int sizeY, unsigned int particle_width, unsigned int particle_height,
+		float KsStruct, float KsShear, float KsBend, float KdStruct, float KdShear, float KdBend, float DEFAULT_DAMPING);
+
+	void Draw(const Transform & transform, const Camera & camera);
 
 private:
 	/*------HELPER FUNCTIONS--------*/
@@ -47,6 +54,10 @@ private:
 	unsigned int m_particles_width;
 	unsigned int m_particles_height;
 	unsigned int m_total_particles;
+
+	/*-------shaders------------*/
+	Spring_Shader m_massSpringShader;
+	Phong_Shader m_renderShader;
 };
 
 #endif //CLOTH_GPU_H
