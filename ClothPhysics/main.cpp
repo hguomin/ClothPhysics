@@ -15,6 +15,7 @@
 #include "Skybox.h"
 #include "GridMesh.h"
 #include "Cloth2.h"
+#include "Cloth_GPU.h"
 
 #include <iostream>
 #include <algorithm>
@@ -48,6 +49,7 @@ int main(int argc, char ** argv[])
 	Mouse mouse;
 
 	Cloth2 cloth(8, 8, 75, 75);
+	Cloth_GPU gpuCloth;
 
 	float counter = 0.0f;
 	Mesh monkey("./models/monkey3.obj");
@@ -173,12 +175,13 @@ int main(int argc, char ** argv[])
 		
 		phong.Use();
 		phong.UpdateValues(transform, camera);
+		//phong.UnUse();
 
 		//texture.Use();
 		//monkey.Draw();
 		//Physics handling semi-fixed timestep
 		int physicSteps = 0;
-		
+		/*
 		while (totalDeltaTime > 0 && physicSteps < MAX_PHYSICS_STEP)
 		{
 			float dt = std::min(totalDeltaTime, MAX_DELTA_TIME);
@@ -189,9 +192,9 @@ int main(int argc, char ** argv[])
 		}
 		//cloth.Update(0.01f, wind, iterations);
 		cloth.Draw();
-
-		
-		TwDraw();
+		*/
+		gpuCloth.Draw();
+		//TwDraw();
 		display.Update();
 		
 
