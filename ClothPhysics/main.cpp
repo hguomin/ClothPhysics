@@ -40,7 +40,8 @@ int main(int argc, char ** argv[])
 	Basic_Shader shader("./shaders/space");
 	Phong_Shader phong("./shaders/phong");
 	Texture texture("./textures/white.jpg");
-	Camera camera(glm::vec3(0, 0, 0), 70.0f, display.GetAspectRation(), 0.01f, 1000.0f);
+	glm::vec3 cameraStartPosition = glm::vec3(0, 0, -60);
+	Camera camera(cameraStartPosition, 70.0f, display.GetAspectRation(), 0.01f, 1000.0f);
 	
 	Skybox sky;
 	sky.SkyboxInit("./textures/skybox/", "back.jpg", "front.jpg", "left.jpg", "right.jpg", "top.jpg", "bottom.jpg");
@@ -168,13 +169,13 @@ int main(int argc, char ** argv[])
 		}
 		wind = glm::vec3(windX, windY, windZ);
 
-		sky.Draw(transform, camera);
+		//sky.Draw(transform, camera);
 		
-		//shader.Use();
-		//shader.Update(transform, camera);
+		shader.Use();
+		shader.UpdateValues(transform, camera);
 		
-		phong.Use();
-		phong.UpdateValues(transform, camera);
+		//phong.Use();
+		//phong.UpdateValues(transform, camera);
 		//phong.UnUse();
 
 		//texture.Use();

@@ -7,7 +7,9 @@ Cloth_GPU::Cloth_GPU()
 	m_points_width = 50;
 	m_points_total = (m_points_height*m_points_width);
 	m_connections_total = ((m_points_width - 1)* m_points_height + (m_points_height - 1)*m_points_width);
-	iterations_per_frame = 16;
+	iterations_per_frame = 1;
+
+	loadShaders();
 
 	glm::vec4* initial_positions = new glm::vec4[m_points_total];
 	glm::vec3* initial_velocities = new glm::vec3[m_points_total];
@@ -20,11 +22,12 @@ Cloth_GPU::Cloth_GPU()
 		for (unsigned int i = 0; i < m_points_width; i++)
 		{
 			float fi = float(i) / float(m_points_width);
-			initial_positions[n] = glm::vec4(
-				(fi - 0.5f)*float(m_points_width),
-				(fj - 0.5f)*float(m_points_height),
-				0.6f*sinf(fi)*cosf(fj),
-				1.0f);
+				glm::vec4 temp = glm::vec4(
+					float(m_points_width)*(fi),
+					0.0f,
+					-float(m_points_width)*(fj),
+					1.0f);
+			initial_positions[n] = temp;
 			initial_velocities[n] = glm::vec3(0.0f);
 			connection_vectors[n] = glm::vec4(-1);
 
@@ -58,17 +61,17 @@ Cloth_GPU::Cloth_GPU()
 	{
 		glBindVertexArray(m_vArrayO[i]);
 
-		glBindBuffer(GL_ARRAY_BUFFER, m_vArrayO[POSITiON_A + i]);
+		glBindBuffer(GL_ARRAY_BUFFER, m_vBufferO[POSITiON_A + i]);
 		glBufferData(GL_ARRAY_BUFFER, m_points_total*sizeof(glm::vec4), initial_positions, GL_DYNAMIC_COPY);
 		glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, NULL);
 		glEnableVertexAttribArray(0);
 
-		glBindBuffer(GL_ARRAY_BUFFER, m_vArrayO[VELOCITY_A + i]);
+		glBindBuffer(GL_ARRAY_BUFFER, m_vBufferO[VELOCITY_A + i]);
 		glBufferData(GL_ARRAY_BUFFER, m_points_total*sizeof(glm::vec3), initial_velocities, GL_DYNAMIC_COPY);
 		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 		glEnableVertexAttribArray(1);
 
-		glBindBuffer(GL_ARRAY_BUFFER, m_vArrayO[CONNECTION]);
+		glBindBuffer(GL_ARRAY_BUFFER, m_vBufferO[CONNECTION]);
 		glBufferData(GL_ARRAY_BUFFER, m_points_total*sizeof(glm::vec4), connection_vectors, GL_STATIC_DRAW);
 		glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 0, NULL);
 		glEnableVertexAttribArray(2);
@@ -128,11 +131,12 @@ void Cloth_GPU::Draw()
 
 	for (unsigned int i = iterations_per_frame; i != 0; --i)
 	{
+		unsigned int temp = m_iteration_index & 1;
 		glBindVertexArray(m_vArrayO[m_iteration_index & 1]);
 		glBindTexture(GL_TEXTURE_BUFFER, m_pos_texBufferO[m_iteration_index & 1]);
 		m_iteration_index++;
 		glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, m_vBufferO[POSITiON_A + (m_iteration_index & 1)]);
-		glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 1, m_vBufferO[POSITION_B + (m_iteration_index & 1)]);
+		glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 1, m_vBufferO[VELOCITY_A + (m_iteration_index & 1)]);
 		glBeginTransformFeedback(GL_POINTS);
 		glDrawArrays(GL_POINTS, 0, m_points_total);
 		glEndTransformFeedback();
@@ -141,9 +145,13 @@ void Cloth_GPU::Draw()
 	glDisable(GL_RASTERIZER_DISCARD);
 
 	glUseProgram(m_render_program);
-
+	
 	glPointSize(4.0f);
 	glDrawArrays(GL_POINTS, 0, m_points_total);
+	
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_index_buffer);
+	glDrawElements(GL_LINES, m_connections_total * 2, GL_UNSIGNED_INT, NULL);
+	
 }
 
 void Cloth_GPU::loadShaders()
@@ -166,6 +174,8 @@ void Cloth_GPU::loadShaders()
 
 	glLinkProgram(m_update_program);
 
+	Shader::PrintError(m_update_program);
+
 	glGetShaderInfoLog(vs, 1024, NULL, buffer);
 	glGetProgramInfoLog(m_update_program, 1024, NULL, buffer);
 
@@ -179,4 +189,6 @@ void Cloth_GPU::loadShaders()
 	glAttachShader(m_render_program, fs);
 
 	glLinkProgram(m_render_program);
+
+	Shader::PrintError(m_render_program);
 }
