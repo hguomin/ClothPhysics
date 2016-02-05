@@ -171,8 +171,8 @@ int main(int argc, char ** argv[])
 
 		//sky.Draw(transform, camera);
 		
-		shader.Use();
-		shader.UpdateValues(transform, camera);
+		//shader.Use();
+		//shader.UpdateValues(transform, camera);
 		
 		//phong.Use();
 		//phong.UpdateValues(transform, camera);

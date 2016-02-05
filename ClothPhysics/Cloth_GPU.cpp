@@ -13,7 +13,7 @@ Cloth_GPU::Cloth_GPU()
 
 	glm::vec4* initial_positions = new glm::vec4[m_points_total];
 	glm::vec3* initial_velocities = new glm::vec3[m_points_total];
-	glm::vec4* connection_vectors = new glm::vec4[m_points_total];
+	glm::ivec4* connection_vectors = new glm::ivec4[m_points_total];
 
 	unsigned int n = 0;
 	for (unsigned int j = 0; j < m_points_height; j++)
@@ -22,14 +22,14 @@ Cloth_GPU::Cloth_GPU()
 		for (unsigned int i = 0; i < m_points_width; i++)
 		{
 			float fi = float(i) / float(m_points_width);
-				glm::vec4 temp = glm::vec4(
-					float(m_points_width)*(fi),
-					0.0f,
-					-float(m_points_width)*(fj),
-					1.0f);
+			glm::vec4 temp = glm::vec4(
+				(fi - 0.5f)*float(m_points_width),
+				(fj - 0.5f)*float(m_points_height),
+				0.6*glm::sin(fi)*cos(fj),
+				1.0f);
 			initial_positions[n] = temp;
 			initial_velocities[n] = glm::vec3(0.0f);
-			connection_vectors[n] = glm::vec4(-1);
+			connection_vectors[n] = glm::ivec4(-1);
 
 			if (j != (m_points_height - 1))
 			{
@@ -144,7 +144,7 @@ void Cloth_GPU::Draw()
 
 	glDisable(GL_RASTERIZER_DISCARD);
 
-	glUseProgram(m_render_program);
+ 	glUseProgram(m_render_program);
 	
 	glPointSize(4.0f);
 	glDrawArrays(GL_POINTS, 0, m_points_total);

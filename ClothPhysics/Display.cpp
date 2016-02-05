@@ -17,6 +17,7 @@ Display::Display(int width, int height, const std::string& title)
 	m_glContext = SDL_GL_CreateContext(m_window);
 	m_width = width;
 	m_height = height;
+	glViewport(0, 0, width, height);
 
 	GLenum status = glewInit();
 
