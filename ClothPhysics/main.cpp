@@ -176,7 +176,6 @@ int main(int argc, char ** argv[])
 
 		//texture.Use();
 		//monkey.Draw();
-
 		//Physics handling semi-fixed timestep
 		int physicSteps = 0;
 		
@@ -191,6 +190,7 @@ int main(int argc, char ** argv[])
 		//cloth.Update(0.01f, wind, iterations);
 		cloth.Draw();
 
+		
 		TwDraw();
 		display.Update();
 		

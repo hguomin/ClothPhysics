@@ -79,7 +79,7 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Spring_Shader.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Different Shaders</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -144,7 +144,7 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Spring_Shader.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\Different Shaders</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -158,6 +158,9 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="shaders\phong.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\massSpring.vert">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

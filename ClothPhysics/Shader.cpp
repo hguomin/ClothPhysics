@@ -33,6 +33,18 @@ void Shader::LoadFromString(GLenum type, const std::string& source)
 	m_shaders[m_totalShaders++] = shader;
 }
 
+GLuint Shader::LoadFromStringAndReturn(GLenum type, const std::string& source)
+{
+	GLuint shader = glCreateShader(type);
+
+	const char* ptmp = source.c_str();
+	glShaderSource(shader, 1, &ptmp, NULL);
+
+	glCompileShader(shader);
+	Shader::PrintError(shader);
+	return shader;
+}
+
 void Shader::CreateAndLinkProgram()
 {
 	m_program = glCreateProgram();
@@ -123,6 +135,20 @@ void Shader::LoadFromFile(GLenum whichShader, const std::string & fileName)
 		std::cerr << "Error loading shader: " << fileName << std::endl;
 	}
 	
+}
+
+GLuint Shader::LoadFromFileAndReturn(GLenum type, const std::string & fileName)
+{
+	std::ifstream fp;
+	fp.open(fileName.c_str(), std::ios_base::in);
+	if (fp) {
+		std::string buffer(std::istreambuf_iterator<char>(fp), (std::istreambuf_iterator<char>()));
+		return LoadFromStringAndReturn(type, buffer);
+	}
+	else {
+		std::cerr << "Error loading shader: " << fileName << std::endl;
+	}
+	return -1;
 }
 
 GLuint Shader::UnifLoc(const std::string& uniform)

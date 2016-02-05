@@ -1,4 +1,4 @@
-#version 430 core
+#version 400 core
 
 layout (triangles) in;
 layout (triangle_strip) out;

@@ -1,4 +1,4 @@
-#version 330 core
+#version 400 core
 precision highp float;
 
 layout (location=0) in vec4 position_mass;	//position and mass

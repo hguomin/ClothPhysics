@@ -1,4 +1,4 @@
-#version 330 core
+#version 400 core
 
 //layout(location=0) smooth out vec4 vFragColor;	//fragment output
 

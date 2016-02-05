@@ -27,8 +27,11 @@ public:
 	void DeleteShaderProgram();
 
 	void LoadFromFile(GLenum whichShader, const std::string& fileName);
+	static GLuint LoadFromFileAndReturn(GLenum type, const std::string& fileName);
+	static void PrintError(GLuint programOrShader);
+	static GLuint LoadFromStringAndReturn(GLenum type, const std::string& source);
 protected:
-	void PrintError(GLuint programOrShader);
+	
 
 	enum ShaderType {
 		VERTEX_SHADER, FRAGMENT_SHADER, GEOMETRY_SHADER

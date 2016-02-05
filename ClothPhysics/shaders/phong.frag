@@ -1,4 +1,4 @@
-#version 330 core
+#version 400 core
 // data from vertex shader
 in vec3 o_normal;
 in vec3 o_toLight;
