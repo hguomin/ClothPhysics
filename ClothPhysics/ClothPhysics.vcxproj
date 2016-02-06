@@ -96,6 +96,7 @@
     <ClCompile Include="Skybox.cpp" />
     <ClCompile Include="Spring_Shader.cpp" />
     <ClCompile Include="Texture.cpp" />
+    <ClCompile Include="TransformFeedback_Shader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h" />
@@ -118,6 +119,7 @@
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="Transform.h" />
+    <ClInclude Include="TransformFeedback_Shader.h" />
     <ClInclude Include="Vertex.h" />
   </ItemGroup>
   <ItemGroup>

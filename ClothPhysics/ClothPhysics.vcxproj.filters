@@ -81,6 +81,9 @@
     <ClCompile Include="Spring_Shader.cpp">
       <Filter>Source Files\Different Shaders</Filter>
     </ClCompile>
+    <ClCompile Include="TransformFeedback_Shader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Display.h">
@@ -145,6 +148,9 @@
     </ClInclude>
     <ClInclude Include="Spring_Shader.h">
       <Filter>Header Files\Different Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="TransformFeedback_Shader.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

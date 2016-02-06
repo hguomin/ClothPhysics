@@ -123,7 +123,7 @@ Cloth_GPU::~Cloth_GPU()
 	glDeleteVertexArrays(2, m_vArrayO);
 }
 
-void Cloth_GPU::Draw()
+void Cloth_GPU::Draw(const Transform & transform, const Camera & camera)
 {
 	glUseProgram(m_update_program);
 
@@ -144,22 +144,20 @@ void Cloth_GPU::Draw()
 
 	glDisable(GL_RASTERIZER_DISCARD);
 
- 	glUseProgram(m_render_program);
-	
+	m_renderShader.Use();
+	m_renderShader.UpdateValues(transform, camera);
+
 	glPointSize(4.0f);
 	glDrawArrays(GL_POINTS, 0, m_points_total);
 	
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_index_buffer);
 	glDrawElements(GL_LINES, m_connections_total * 2, GL_UNSIGNED_INT, NULL);
-	
+	m_renderShader.UnUse();
 }
 
 void Cloth_GPU::loadShaders()
 {
 	GLuint vs;
-	GLuint fs;
-
-	char buffer[1024];
 
 	vs = Shader::LoadFromFileAndReturn(GL_VERTEX_SHADER, "./shaders/update.vert");
 	m_update_program = glCreateProgram();
@@ -176,19 +174,7 @@ void Cloth_GPU::loadShaders()
 
 	Shader::PrintError(m_update_program);
 
-	glGetShaderInfoLog(vs, 1024, NULL, buffer);
-	glGetProgramInfoLog(m_update_program, 1024, NULL, buffer);
-
 	glDeleteShader(vs);
 
-	vs = Shader::LoadFromFileAndReturn(GL_VERTEX_SHADER, "./shaders/render.vert");
-	fs = Shader::LoadFromFileAndReturn(GL_FRAGMENT_SHADER, "./shaders/render.frag");
-
-	m_render_program = glCreateProgram();
-	glAttachShader(m_render_program, vs);
-	glAttachShader(m_render_program, fs);
-
-	glLinkProgram(m_render_program);
-
-	Shader::PrintError(m_render_program);
+	m_renderShader = Basic_Shader("./shaders/render");
 }

@@ -30,7 +30,7 @@
 #define DESIRED_FRAME_TIME (MS_PER_SECOND/ DESIRED_FPS)
 #define MAX_DELTA_TIME 0.1f
 
-bool GPU = false;
+bool GPU = true;
 
 int main(int argc, char ** argv[])
 {
@@ -200,7 +200,7 @@ int main(int argc, char ** argv[])
 		}
 		else
 		{
-			gpuCloth.Draw();
+			gpuCloth.Draw(transform, camera);
 		}
 		
 		display.Update();

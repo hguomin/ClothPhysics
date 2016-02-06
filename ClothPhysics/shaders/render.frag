@@ -1,8 +1,13 @@
 #version 410 core
 
-layout (location = 0) out vec4 color;
+layout(location = 0) out vec4 vFragColor;
 
-void main(void)
+uniform sampler2D sampler;
+
+//input from vertex shader
+smooth in vec2 uv;
+
+void main()
 {
-    color = vec4(1.0);
+	vFragColor = texture2D(sampler, uv.st);
 }
