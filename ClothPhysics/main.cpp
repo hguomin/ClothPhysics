@@ -30,7 +30,7 @@
 #define DESIRED_FRAME_TIME (MS_PER_SECOND/ DESIRED_FPS)
 #define MAX_DELTA_TIME 0.1f
 
-bool GPU = true;
+bool GPU = false;
 
 int main(int argc, char ** argv[])
 {

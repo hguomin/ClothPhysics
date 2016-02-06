@@ -6,10 +6,13 @@
 
 Shader::Shader()
 {
+	ShaderType[GL_VERTEX_SHADER] = 0;
+	ShaderType[GL_FRAGMENT_SHADER] = 1;
+	ShaderType[GL_GEOMETRY_SHADER] = 2;
+	ShaderType[GL_TESS_CONTROL_SHADER] = 3;
+	ShaderType[GL_TESS_EVALUATION_SHADER] = 4;
+	ShaderType[GL_COMPUTE_SHADER] = 5;
 	m_totalShaders = 0;
-	m_shaders[VERTEX_SHADER] = 0;
-	m_shaders[FRAGMENT_SHADER] = 0;
-	m_shaders[GEOMETRY_SHADER] = 0;
 	m_attributeList.clear();
 	m_uniformLocationList.clear();
 }
@@ -48,25 +51,40 @@ GLuint Shader::LoadFromStringAndReturn(GLenum type, const std::string& source)
 void Shader::CreateAndLinkProgram()
 {
 	m_program = glCreateProgram();
-	if (m_shaders[VERTEX_SHADER] != 0)
+	if (m_shaders[ShaderType[GL_VERTEX_SHADER]] != 0)
 	{
-		glAttachShader(m_program, m_shaders[VERTEX_SHADER]);
+		glAttachShader(m_program, m_shaders[ShaderType[GL_VERTEX_SHADER]]);
 	}
-	if (m_shaders[FRAGMENT_SHADER] != 0)
+	if (m_shaders[ShaderType[GL_FRAGMENT_SHADER]] != 0)
 	{
-		glAttachShader(m_program, m_shaders[FRAGMENT_SHADER]);
+		glAttachShader(m_program, m_shaders[ShaderType[GL_FRAGMENT_SHADER]]);
 	}
-	if (m_shaders[GEOMETRY_SHADER] != 0)
+	if (m_shaders[ShaderType[GL_GEOMETRY_SHADER]] != 0)
 	{
-		glAttachShader(m_program, m_shaders[GEOMETRY_SHADER]);
+		glAttachShader(m_program, m_shaders[ShaderType[GL_GEOMETRY_SHADER]]);
+	}
+	if (m_shaders[ShaderType[GL_TESS_CONTROL_SHADER]] != 0)
+	{
+		glAttachShader(m_program, m_shaders[ShaderType[GL_TESS_CONTROL_SHADER]]);
+	}
+	if (m_shaders[ShaderType[GL_TESS_EVALUATION_SHADER]] != 0)
+	{
+		glAttachShader(m_program, m_shaders[ShaderType[GL_TESS_EVALUATION_SHADER]]);
+	}
+	if (m_shaders[ShaderType[GL_COMPUTE_SHADER]] != 0)
+	{
+		glAttachShader(m_program, m_shaders[ShaderType[GL_TESS_EVALUATION_SHADER]]);
 	}
 
 	glLinkProgram(m_program);
 	PrintError(m_program);
 
-	glDeleteShader(m_shaders[VERTEX_SHADER]);
-	glDeleteShader(m_shaders[FRAGMENT_SHADER]);
-	glDeleteShader(m_shaders[GEOMETRY_SHADER]);
+	glDeleteShader(m_shaders[ShaderType[GL_VERTEX_SHADER]]);
+	glDeleteShader(m_shaders[ShaderType[GL_FRAGMENT_SHADER]]);
+	glDeleteShader(m_shaders[ShaderType[GL_GEOMETRY_SHADER]]);
+	glDeleteShader(m_shaders[ShaderType[GL_TESS_CONTROL_SHADER]]);
+	glDeleteShader(m_shaders[ShaderType[GL_TESS_EVALUATION_SHADER]]);
+	glDeleteShader(m_shaders[ShaderType[GL_TESS_EVALUATION_SHADER]]);
 }
 
 void Shader::PrintError(GLuint programOrShader)
@@ -160,9 +178,3 @@ GLuint Shader::AttrList(const std::string& attrib)
 {
 	return m_attributeList[attrib];
 }
-/*
-void Shader::UpdateValues(const Transform & transform, const Camera & camera)
-{
-	std::cout << "Calling Update Values for Shader base class...Should not happen" << std::endl;
-}
-*/

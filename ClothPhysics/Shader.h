@@ -11,8 +11,6 @@ public:
 	Shader();
 	virtual ~Shader() = 0;
 
-	//virtual void UpdateValues(const Transform & transform, const Camera & camera);
-
 	void LoadFromString(GLenum type, const std::string& source);
 	
 	void CreateAndLinkProgram();
@@ -32,15 +30,12 @@ public:
 	static GLuint LoadFromStringAndReturn(GLenum type, const std::string& source);
 protected:
 	
-
-	enum ShaderType {
-		VERTEX_SHADER, FRAGMENT_SHADER, GEOMETRY_SHADER
-	};
 	GLuint m_program;
 	int m_totalShaders;
-	GLuint m_shaders[3];
+	GLuint m_shaders[6];
 	std::map<std::string, GLuint> m_attributeList;
 	std::map<std::string, GLuint> m_uniformLocationList;
+	std::map<GLenum, unsigned int> ShaderType;
 
 	GLuint UnifLoc(const std::string& uniform);
 	GLuint AttrList(const std::string& attrib);
