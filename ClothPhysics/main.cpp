@@ -30,6 +30,7 @@
 #define DESIRED_FRAME_TIME (MS_PER_SECOND/ DESIRED_FPS)
 #define MAX_DELTA_TIME 0.1f
 
+bool GPU = false;
 
 int main(int argc, char ** argv[])
 {
@@ -40,7 +41,7 @@ int main(int argc, char ** argv[])
 	Basic_Shader shader("./shaders/space");
 	Phong_Shader phong("./shaders/phong");
 	Texture texture("./textures/white.jpg");
-	glm::vec3 cameraStartPosition = glm::vec3(0, 0, -60);
+	glm::vec3 cameraStartPosition = glm::vec3(0, 0, -0.5f);
 	Camera camera(cameraStartPosition, 70.0f, display.GetAspectRation(), 0.01f, 1000.0f);
 	
 	Skybox sky;
@@ -167,35 +168,41 @@ int main(int argc, char ** argv[])
 			cloth.CalculatePerVertexNormals();
 			cloth.UpdateTextureCoordinates();
 		}
-		wind = glm::vec3(windX, windY, windZ);
-
-		//sky.Draw(transform, camera);
-		
-		//shader.Use();
-		//shader.UpdateValues(transform, camera);
-		
-		//phong.Use();
-		//phong.UpdateValues(transform, camera);
-		//phong.UnUse();
-
-		//texture.Use();
-		//monkey.Draw();
-		//Physics handling semi-fixed timestep
-		int physicSteps = 0;
-		/*
-		while (totalDeltaTime > 0 && physicSteps < MAX_PHYSICS_STEP)
+		if (!GPU)
 		{
-			float dt = std::min(totalDeltaTime, MAX_DELTA_TIME);
-			cloth.Update(dt, wind, iterations);
+			wind = glm::vec3(windX, windY, windZ);
 
-			totalDeltaTime -= dt;
-			physicSteps++;
+			sky.Draw(transform, camera);
+
+			//shader.Use();
+			//shader.UpdateValues(transform, camera);
+
+			phong.Use();
+			phong.UpdateValues(transform, camera);
+			//phong.UnUse();
+
+			//texture.Use();
+			//monkey.Draw();
+			//Physics handling semi-fixed timestep
+			int physicSteps = 0;
+
+			while (totalDeltaTime > 0 && physicSteps < MAX_PHYSICS_STEP)
+			{
+				float dt = std::min(totalDeltaTime, MAX_DELTA_TIME);
+				cloth.Update(dt, wind, iterations);
+
+				totalDeltaTime -= dt;
+				physicSteps++;
+			}
+			//cloth.Update(0.01f, wind, iterations);
+			cloth.Draw();
+			TwDraw();
 		}
-		//cloth.Update(0.01f, wind, iterations);
-		cloth.Draw();
-		*/
-		gpuCloth.Draw();
-		//TwDraw();
+		else
+		{
+			gpuCloth.Draw();
+		}
+		
 		display.Update();
 		
 
