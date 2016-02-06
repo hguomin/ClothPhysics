@@ -30,7 +30,7 @@
 #define DESIRED_FRAME_TIME (MS_PER_SECOND/ DESIRED_FPS)
 #define MAX_DELTA_TIME 0.1f
 
-bool GPU = true;
+bool GPU = false;
 
 int main(int argc, char ** argv[])
 {
@@ -177,6 +177,7 @@ int main(int argc, char ** argv[])
 
 		if (!GPU)
 		{
+			camera.SetSpeed(3.0f);
 			wind = glm::vec3(windX, windY, windZ);
 
 			sky.Draw(transform, camera);
@@ -207,6 +208,7 @@ int main(int argc, char ** argv[])
 		}
 		else
 		{
+			camera.SetSpeed(1.0f);
 			gpuCloth.Draw(transform, camera);
 		}
 		

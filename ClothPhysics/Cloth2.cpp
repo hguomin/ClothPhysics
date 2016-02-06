@@ -70,7 +70,7 @@ Cloth2::Cloth2(float width, float height, unsigned int particles_width, unsigned
 	getParticleAt(m_particles_width - 1, 0)->makeUnmovable();
 	getParticleAt(m_particles_width - 2, 0)->makeUnmovable();
 	
-	ball_position = glm::vec3(0.5, -0.5f, 0.5);
+	ball_position = glm::vec3(-1.0f, -5.0f, -2.0f);
 	ball_size = 1.0f;
 
 	GridMesh::UpdatePositions(ExtractPositions());

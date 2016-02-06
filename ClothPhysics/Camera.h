@@ -35,6 +35,8 @@ public:
 
 	void Move(glm::vec3& dir, float amount);
 
+	void SetSpeed(float value) { m_speed = value; }
+
 	glm::vec3 GetUp() { return m_up; }
 	glm::vec3 GetDown() { return -m_up; }
 	glm::vec3 GetLeft() { return glm::normalize(glm::cross(m_up, m_forward)); }
@@ -45,6 +47,8 @@ public:
 private:
 	glm::mat4 m_perspective;
 	glm::vec3 m_position;
+
+	float m_speed;
 
 	glm::vec3 m_forward;
 	glm::vec3 m_up;
