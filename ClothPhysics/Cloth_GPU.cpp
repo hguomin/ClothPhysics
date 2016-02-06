@@ -24,8 +24,8 @@ Cloth_GPU::Cloth_GPU()
 			float fi = float(i) / float(m_points_width);
 			glm::vec4 temp = glm::vec4(
 				(fi - 0.5f)*float(m_points_width),
-				(fj - 0.5f)*float(m_points_height),
-				0.6*glm::sin(fi)*cos(fj),
+				0,
+				-(fj - 0.5f)*float(m_points_height),
 				1.0f);
 			initial_positions[n] = temp;
 			initial_velocities[n] = glm::vec3(0.0f);

@@ -168,6 +168,13 @@ int main(int argc, char ** argv[])
 			cloth.CalculatePerVertexNormals();
 			cloth.UpdateTextureCoordinates();
 		}
+		if (currentKeyStates[SDL_SCANCODE_V])
+		{
+			GPU = !GPU;
+		}
+
+
+
 		if (!GPU)
 		{
 			wind = glm::vec3(windX, windY, windZ);
