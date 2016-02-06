@@ -7,7 +7,7 @@ Cloth_GPU::Cloth_GPU()
 	m_points_width = 50;
 	m_points_total = (m_points_height*m_points_width);
 	m_connections_total = ((m_points_width - 1)* m_points_height + (m_points_height - 1)*m_points_width);
-	iterations_per_frame = 1;
+	iterations_per_frame = 4;
 
 	loadShaders();
 

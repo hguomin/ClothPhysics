@@ -11,7 +11,7 @@ public:
 	Shader();
 	virtual ~Shader() = 0;
 
-	virtual void UpdateValues(const Transform & transform, const Camera & camera);
+	//virtual void UpdateValues(const Transform & transform, const Camera & camera);
 
 	void LoadFromString(GLenum type, const std::string& source);
 	

@@ -160,8 +160,9 @@ GLuint Shader::AttrList(const std::string& attrib)
 {
 	return m_attributeList[attrib];
 }
-
+/*
 void Shader::UpdateValues(const Transform & transform, const Camera & camera)
 {
 	std::cout << "Calling Update Values for Shader base class...Should not happen" << std::endl;
 }
+*/

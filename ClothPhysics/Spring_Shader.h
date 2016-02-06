@@ -1,9 +1,9 @@
 #pragma once
 #ifndef SPRING_SHADER_H
 #define SPRING_SHADER_H
-#include "Shader.h"
+#include "Basic_Shader.h"
 class Spring_Shader :
-	public Shader
+	public Basic_Shader
 {
 public:
 	Spring_Shader(const std::string& filePath = "./shaders/massSpring");
