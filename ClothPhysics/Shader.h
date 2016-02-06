@@ -2,8 +2,6 @@
 #include <map>
 #include <string>
 #include "GL\glew.h"
-#include "Transform.h"
-#include "Camera.h"
 
 class Shader
 {
