@@ -27,7 +27,9 @@ private:
 	void loadShaders();
 
 	unsigned int m_points_width;
+	float m_width;
 	unsigned int m_points_height;
+	float m_height;
 	unsigned int m_points_total;
 	unsigned int m_connections_total;
 

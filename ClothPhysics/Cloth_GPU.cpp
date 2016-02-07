@@ -3,8 +3,10 @@
 
 Cloth_GPU::Cloth_GPU()
 {
-	m_points_height = 50;
-	m_points_width = 50;
+	m_points_height = 75;
+	m_points_width = 75;
+	m_width = 8;
+	m_height = 8;
 	m_points_total = (m_points_height*m_points_width);
 	m_connections_total = ((m_points_width - 1)* m_points_height + (m_points_height - 1)*m_points_width);
 	iterations_per_frame = 4;
@@ -23,9 +25,9 @@ Cloth_GPU::Cloth_GPU()
 		{
 			float fi = float(i) / float(m_points_width);
 			glm::vec4 temp = glm::vec4(
-				(fi - 0.5f)*float(m_points_width),
+				(fi - 0.5f)*m_width,
 				0,
-				-(fj - 0.5f)*float(m_points_height),
+				-(fj - 0.5f)*m_height,
 				1.0f);
 			initial_positions[n] = temp;
 			initial_velocities[n] = glm::vec3(0.0f);
