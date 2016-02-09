@@ -38,7 +38,7 @@ private:
 
 	//------Shaders and stuff
 	GLuint m_vArrayO[2];
-	GLuint m_vBufferO[5];
+	GLuint m_vBufferO[7];
 	GLuint m_index_buffer;
 	GLuint m_pos_texBufferO[2];
 	GLuint m_update_program;

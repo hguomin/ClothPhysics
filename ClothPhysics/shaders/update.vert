@@ -5,8 +5,13 @@
 layout (location = 0) in vec4 position_mass;
 // This is the current velocity of the vertex
 layout (location = 1) in vec3 velocity;
-// This is our connection vector
-layout (location = 2) in ivec4 connection;
+// This is our stretch connection vector
+layout (location = 2) in ivec4 stretch_connection;
+// This is our shear connection vector
+layout (location = 3) in ivec4 shear_connection;
+// This is our bend connection vector
+layout (location = 4) in ivec4 bend_connection;
+
 
 // This is a TBO that will be bound to the same buffer as the
 // position_mass input attribute
@@ -31,6 +36,15 @@ uniform float c = 2.8;
 // Spring resting length
 uniform float rest_length = 0.88;
 
+vec3 CalcForce(vec3 p, int connection)
+{
+	//q is the position of the other particle
+	vec3 q = texelFetch(tex_position, connection).xyz;
+	vec3 d = q - p;
+    float x = length(d);
+    return -k * (rest_length - x) * normalize(d);
+}
+
 void main(void)
 {
     vec3 p = position_mass.xyz;    // p can be our position
@@ -40,14 +54,20 @@ void main(void)
     bool fixed_node = true;        // Becomes false when force is applied
 
     for (int i = 0; i < 4; i++) {
-        if (connection[i] != -1) {
-            // q is the position of the other vertex
-            vec3 q = texelFetch(tex_position, connection[i]).xyz;
-            vec3 d = q - p;
-            float x = length(d);
-            F += -k * (rest_length - x) * normalize(d);
+        if (stretch_connection[i] != -1) {
+            F += CalcForce(p,stretch_connection[i]);
             fixed_node = false;
         }
+		if (shear_connection[i] != -1)
+		{
+			F += CalcForce(p,shear_connection[i]);
+           fixed_node = false;
+		}
+		if	(bend_connection[i] != -1)
+		{
+			F += CalcForce(p,bend_connection[i]);
+           fixed_node = false;
+		}
     }
 
     // If this is a fixed node, reset force to zero
