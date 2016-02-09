@@ -17,11 +17,14 @@ public:
 private:
 	enum BUFFER_TYPE
 	{
-		POSITiON_A,
+		POSITION_A,
 		POSITION_B,
 		VELOCITY_A,
 		VELOCITY_B,
-		CONNECTION
+		STRETCH_CONNECTION,
+		SHEAR_CONNECTION,
+		BEND_CONNECTION
+		
 	};
 
 	void loadShaders();
