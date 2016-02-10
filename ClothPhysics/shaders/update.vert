@@ -34,9 +34,11 @@ const vec3 gravity = vec3(0.0, -0.08, 0.0);
 uniform float c = 2.8;
 
 // Spring resting length
-uniform float rest_length = 0.88;
+uniform float shear_length;
+uniform float stretch_length;
+uniform float bend_length;
 
-vec3 CalcForce(vec3 p, int connection)
+vec3 CalcForce(vec3 p, int connection, float rest_length)
 {
 	//q is the position of the other particle
 	vec3 q = texelFetch(tex_position, connection).xyz;
@@ -55,17 +57,17 @@ void main(void)
 
     for (int i = 0; i < 4; i++) {
         if (stretch_connection[i] != -1) {
-            F += CalcForce(p,stretch_connection[i]);
+            F += CalcForce(p,stretch_connection[i], stretch_length);
             fixed_node = false;
         }
 		if (shear_connection[i] != -1)
 		{
-			F += CalcForce(p,shear_connection[i]);
+			F += CalcForce(p,shear_connection[i], shear_length);
            fixed_node = false;
 		}
 		if	(bend_connection[i] != -1)
 		{
-			F += CalcForce(p,bend_connection[i]);
+			F += CalcForce(p,bend_connection[i], bend_length);
            fixed_node = false;
 		}
     }
@@ -77,7 +79,7 @@ void main(void)
     }
 
     // Accelleration due to force
-    vec3 a = F / m;
+    vec3 a = F / 1.0;
 
     // Displacement
     vec3 s = u * t + 0.5 * a * t * t;
