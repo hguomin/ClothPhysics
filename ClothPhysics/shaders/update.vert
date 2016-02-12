@@ -1,17 +1,12 @@
-#version 400 core
+#version 410 core
 
 // This input vector contains the vertex position in xyz, and the
 // mass of the vertex in w
 layout (location = 0) in vec4 position_mass;
 // This is the current velocity of the vertex
 layout (location = 1) in vec3 velocity;
-// This is our stretch connection vector
-layout (location = 2) in ivec4 stretch_connection;
-// This is our shear connection vector
-layout (location = 3) in ivec4 shear_connection;
-// This is our bend connection vector
-layout (location = 4) in ivec4 bend_connection;
-
+// This is our connection vector
+layout (location = 2) in ivec4 connection;
 
 // This is a TBO that will be bound to the same buffer as the
 // position_mass input attribute
@@ -34,18 +29,7 @@ const vec3 gravity = vec3(0.0, -0.08, 0.0);
 uniform float c = 2.8;
 
 // Spring resting length
-uniform float shear_length;
-uniform float stretch_length;
-uniform float bend_length;
-
-vec3 CalcForce(vec3 p, int connection, float rest_length)
-{
-	//q is the position of the other particle
-	vec3 q = texelFetch(tex_position, connection).xyz;
-	vec3 d = q - p;
-    float x = length(d);
-    return -k * (rest_length - x) * normalize(d);
-}
+uniform float rest_length = 0.88;
 
 void main(void)
 {
@@ -56,30 +40,24 @@ void main(void)
     bool fixed_node = true;        // Becomes false when force is applied
 
     for (int i = 0; i < 4; i++) {
-        if (stretch_connection[i] != -1) {
-            F += CalcForce(p,stretch_connection[i], stretch_length);
+        if (connection[i] != -1) {
+            // q is the position of the other vertex
+            vec3 q = texelFetch(tex_position, connection[i]).xyz;
+            vec3 d = q - p;
+            float x = length(d);
+            F += -k * (rest_length - x) * normalize(d);
             fixed_node = false;
         }
-		if (shear_connection[i] != -1)
-		{
-			F += CalcForce(p,shear_connection[i], shear_length);
-           fixed_node = false;
-		}
-		if	(bend_connection[i] != -1)
-		{
-			F += CalcForce(p,bend_connection[i], bend_length);
-           fixed_node = false;
-		}
     }
 
     // If this is a fixed node, reset force to zero
     if (fixed_node)
     {
-		F = vec3(0.0);
+        F = vec3(0.0);
     }
 
     // Accelleration due to force
-    vec3 a = F / 1.0;
+    vec3 a = F / m;
 
     // Displacement
     vec3 s = u * t + 0.5 * a * t * t;
