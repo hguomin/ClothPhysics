@@ -15,16 +15,7 @@ Cloth_GPU::Cloth_GPU()
 
 	glm::vec4* initial_positions = new glm::vec4[m_points_total];
 	glm::vec3* initial_velocities = new glm::vec3[m_points_total];
-	std::vector<glm::ivec4> stretch_connection_vectors(m_points_total);
-	std::vector<glm::ivec4> shear_connection_vectors(m_points_total);
-	std::vector<glm::ivec4> bend_connection_vectors(m_points_total);
-
-	bool stretch = false;
-	float stretch_length = -1;
-	bool shear = false;
-	float shear_length = -1;
-	bool bend = false;
-	float bend_length = -1;
+	std::vector<glm::ivec4> connection_vectors(m_points_total);
 
 	unsigned int n = 0;
 	for (unsigned int j = 0; j < m_points_height; j++)
@@ -40,99 +31,33 @@ Cloth_GPU::Cloth_GPU()
 				1.0f);
 			initial_positions[n] = temp;
 			initial_velocities[n] = glm::vec3(0.0f);
-			stretch_connection_vectors[n] = glm::ivec4(-1);
-			shear_connection_vectors[n] = glm::ivec4(-1);
-			bend_connection_vectors[n] = glm::ivec4(-1);
+			connection_vectors[n] = glm::ivec4(-1);
 
 			if (j != (m_points_height - 1))
 			{
 				if (i != 0) //index left
 				{
-					stretch_connection_vectors[n][0] = n - 1;
-					stretch = true;
+					connection_vectors[n][0] = n - 1;
 				}
 				if (j != 0) //index above
 				{
-					stretch_connection_vectors[n][1] = n - m_points_width;
-					stretch = true;
+					connection_vectors[n][1] = n - m_points_width;
 				}
 				if (i != (m_points_width -1)) //index right
 				{
-					stretch_connection_vectors[n][2] = n + 1;
-					stretch = true;
+					connection_vectors[n][2] = n + 1;
 				}
 				if (j != (m_points_height -1)) //index left
 				{
-					stretch_connection_vectors[n][3] = n + m_points_width;
-					stretch = true;
+					connection_vectors[n][3] = n + m_points_width;
 				}
 			}
-			//shear. A bit redundent but easier to read
-				if (j != 0 && i != 0) //index above left
-				{
-					shear_connection_vectors[n][0] = n - 1 - m_points_width;
-					shear = true;
-				}
-				if (j != 0 && i != (m_points_width - 1)) //index above right
-				{
-					shear_connection_vectors[n][1] = n + 1 - m_points_width;
-					shear = true;
-				}
-				if (j !=(m_points_height -1) && i != 0) //index below left
-				{
-					shear_connection_vectors[n][2] = n - 1 + m_points_width;
-					shear = true;
-				}
-				if (j != (m_points_height -1) && i !=(m_points_width -1)) //index below right
-				{
-					shear_connection_vectors[n][3] = n + 1 + m_points_width;
-					shear = true;
-				}
-			//bend
-				if (i > 1) //index left
-				{
-					bend_connection_vectors[n][0] = n - 2;
-					bend = true;
-				}
-				if (i < (m_points_width - 2)) //index right
-				{
-					bend_connection_vectors[n][1] = n + 2;
-					bend = true;
-				}
-				if (j > 1) //index above
-				{
-					bend_connection_vectors[n][2] = n - 2 * m_points_width;
-					bend = true;
-				}
-				if (j < (m_points_width -2)) //index below
-				{
-					bend_connection_vectors[n][3] = n + 2 * m_points_width;
-					bend = true;
-				}
 			n++;
 		}
 	}
 
-	//calculating resting length
-	if (stretch)
-	{
-		stretch_length = glm::length(glm::vec3(initial_positions[0]) - glm::vec3(initial_positions[1]));
-	}
-	if (shear)
-	{
-		shear_length = glm::length(glm::vec3(initial_positions[0]) - glm::vec3(initial_positions[m_points_width + 1]));
-	}
-	if (bend)
-	{
-		bend_length = glm::length(glm::vec3(initial_positions[0]) - glm::vec3(initial_positions[2 * m_points_width]));
-	}
-	//add the rest lengths to the update shader as uniforms
-	glUniform1f(glGetUniformLocation(m_update_program, "stretch_length"), stretch_length);
-	glUniform1f(glGetUniformLocation(m_update_program, "shear_length"), shear_length);
-	glUniform1f(glGetUniformLocation(m_update_program, "bend_length"), bend_length);
-
 	glGenVertexArrays(2, m_vArrayO);
-	glGenBuffers(7, m_vBufferO);
+	glGenBuffers(5, m_vBufferO);
 
 	for (unsigned int i = 0; i < 2; i++)
 	{
@@ -148,27 +73,15 @@ Cloth_GPU::Cloth_GPU()
 		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 		glEnableVertexAttribArray(1);
 
-		glBindBuffer(GL_ARRAY_BUFFER, m_vBufferO[STRETCH_CONNECTION]);
-		glBufferData(GL_ARRAY_BUFFER, m_points_total*sizeof(glm::ivec4), &stretch_connection_vectors[0], GL_STATIC_DRAW);
+		glBindBuffer(GL_ARRAY_BUFFER, m_vBufferO[CONNECTION]);
+		glBufferData(GL_ARRAY_BUFFER, m_points_total*sizeof(glm::ivec4), &connection_vectors[0], GL_STATIC_DRAW);
 		glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 0, NULL);
 		glEnableVertexAttribArray(2);
-
-		glBindBuffer(GL_ARRAY_BUFFER, m_vBufferO[SHEAR_CONNECTION]);
-		glBufferData(GL_ARRAY_BUFFER, m_points_total*sizeof(glm::ivec4), &shear_connection_vectors[0], GL_STATIC_DRAW);
-		glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, 0, NULL);
-		glEnableVertexAttribArray(3);
-
-		glBindBuffer(GL_ARRAY_BUFFER, m_vBufferO[BEND_CONNECTION]);
-		glBufferData(GL_ARRAY_BUFFER, m_points_total*sizeof(glm::ivec4), &bend_connection_vectors[0], GL_STATIC_DRAW);
-		glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 0, NULL);
-		glEnableVertexAttribArray(4);
 	}
 
 	delete [] initial_positions;
 	delete [] initial_velocities;
-	stretch_connection_vectors.clear();
-	bend_connection_vectors.clear();
-	shear_connection_vectors.clear();
+	connection_vectors.clear();
 
 	glGenTextures(2, m_pos_texBufferO);
 	glBindTexture(GL_TEXTURE_BUFFER, m_pos_texBufferO[0]);
@@ -208,7 +121,7 @@ Cloth_GPU::Cloth_GPU()
 Cloth_GPU::~Cloth_GPU()
 {
 	glDeleteProgram(m_update_program);
-	glDeleteBuffers(7, m_vBufferO);
+	glDeleteBuffers(5, m_vBufferO);
 	glDeleteVertexArrays(2, m_vArrayO);
 	m_renderShader.DeleteShaderProgram();
 }
