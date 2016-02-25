@@ -40,42 +40,32 @@ int main(int argc, char ** argv[])
 	Display display(800, 600, "TSBK07 Space");
 	
 	TwInit(TW_OPENGL, NULL);
-	
 	TwWindowSize(800, 600);
 	
 	Basic_Shader shader("./shaders/space");
-	
 	Phong_Shader phong("./shaders/phong");
 	
 	Texture texture("./textures/white.jpg");
 	
 	glm::vec3 cameraStartPosition = glm::vec3(-1, 6, 8);
-	
 	Camera camera(cameraStartPosition, 70.0f, display.GetAspectRation(), 0.01f, 1000.0f);
-	
 	camera.SetForward(glm::vec3(0.1f, -0.4f, -0.9f));
 	
 
 	Skybox sky;
-	
 	sky.SkyboxInit("./textures/skybox/", "back.jpg", "front.jpg", "left.jpg", "right.jpg", "top.jpg", "bottom.jpg");
 	
 	Transform transform;
-	
 	Keyboard keyboard;
-	
 	Mouse mouse;
-	
+
 	Cloth2 cloth(8, 8, 75, 75);
-	
 	Cloth_GPU gpuCloth;
-	
 	Cloth_GPU2 cloth2;
 	
 
 	float counter = 0.0f;
 	Mesh monkey("./models/monkey3.obj");
-	
 	Mesh box("./models/box.obj");
 	
 	glm::vec3 wind(0, 0, 1);
@@ -89,11 +79,8 @@ int main(int argc, char ** argv[])
 	myBar = TwNewBar("Hello!");
 	
 	TwAddVarRW(myBar, "Wind X", TW_TYPE_FLOAT, &windX, NULL);
-	
 	TwAddVarRW(myBar, "Wind Y", TW_TYPE_FLOAT, &windY, NULL);
-	
 	TwAddVarRW(myBar, "Wind Z", TW_TYPE_FLOAT, &windZ, NULL);
-	
 	TwAddVarRW(myBar, "Iterations", TW_TYPE_UINT16, &iterations, NULL);
 	
 
@@ -107,7 +94,7 @@ int main(int argc, char ** argv[])
 	int handled;
 	
 	
-
+	
 	while (!display.IsClosed())
 	{
 		//time handling
@@ -136,7 +123,7 @@ int main(int argc, char ** argv[])
 		}
 		
 		const Uint8* currentKeyStates = SDL_GetKeyboardState(NULL);
-
+		
 		keyboard.HandleEvent(currentKeyStates, camera);
 		float amount = 1.0f;
 		if (currentKeyStates[SDL_SCANCODE_O])
@@ -205,8 +192,6 @@ int main(int argc, char ** argv[])
 		{
 			GPU = !GPU;
 		}
-		
-
 		if (!GPU)
 		{
 			camera.SetSpeed(3.0f);
@@ -236,16 +221,13 @@ int main(int argc, char ** argv[])
 			}
 			//cloth.Update(0.01f, wind, iterations);
 			cloth.Draw();
-			
 		}
 		else
 		{
 			camera.SetSpeed(0.5f);
 			//gpuCloth.Draw(transform, camera);
 			cloth2.Draw(transform, camera);
-			
 		}
-		
 		TwDraw();
 		display.Update();
 		

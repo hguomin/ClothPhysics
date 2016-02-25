@@ -7,6 +7,7 @@
 
 Cloth_GPU2::Cloth_GPU2()
 {
+	
 	vRed = { 1.0f, 0.0f, 0.0f, 1.0f };
 	vBeige = { 1.0f, 0.8f, 0.7f, 1.0f };
 	vWhite = { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -242,7 +243,6 @@ void Cloth_GPU2::setupShaders()
 	
 	massSpringShader.CreateAndLinkProgram();
 	
-	glActiveTexture(0);
 	massSpringShader.Use();
 	
 	massSpringShader.AddAttribute("position_mass");
