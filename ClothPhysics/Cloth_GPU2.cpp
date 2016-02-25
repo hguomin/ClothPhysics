@@ -1,13 +1,14 @@
 #include "Cloth_GPU2.h"
 #include "glm\gtc\type_ptr.hpp"
 
-GLfloat vRed[] = { 1.0f, 0.0f, 0.0f, 1.0f };
-GLfloat vBeige[] = { 1.0f, 0.8f, 0.7f, 1.0f };
-GLfloat vWhite[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-GLfloat vGray[] = { .25f, .25f, .25f, 1.0f };
+
 
 Cloth_GPU2::Cloth_GPU2()
 {
+	vRed = { 1.0f, 0.0f, 0.0f, 1.0f };
+	vBeige = { 1.0f, 0.8f, 0.7f, 1.0f };
+	vWhite = { 1.0f, 1.0f, 1.0f, 1.0f };
+	vGray = { .25f, .25f, .25f, 1.0f };
 	setupPositions();
 	setupIndices();
 	setupShaders();
@@ -255,7 +256,7 @@ void Cloth_GPU2::setupShaders()
 	particleShader.AddUniform("vColor");
 	particleShader.AddUniform("selected_index");
 	glUniform1f(particleShader("pointSize"), pointSize);
-	glUniform4fv(particleShader("vColor"), 1, vRed);
+	glUniform4fv(particleShader("vColor"), 1, &vRed[0]);
 	particleShader.UnUse();
 
 	renderShader.CreateAndLinkProgram();
@@ -263,6 +264,6 @@ void Cloth_GPU2::setupShaders()
 	renderShader.AddAttribute("position_mass");
 	renderShader.AddUniform("MVP");
 	renderShader.AddUniform("vColor");
-	glUniform4fv(renderShader("vColor"), 1, vGray);
+	glUniform4fv(renderShader("vColor"), 1, &vGray[0]);
 	renderShader.UnUse();
 }

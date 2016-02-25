@@ -2,6 +2,7 @@
 
 #include "glm\glm.hpp"
 #include <vector>
+#include <array>
 #include "Basic_Shader.h"
 class Cloth_GPU2
 {
@@ -60,5 +61,10 @@ private:
 	GLuint texPrePosID[2];
 
 	GLuint tfID;
+
+	std::array<GLfloat, 4> vRed;
+	std::array<GLfloat, 4> vBeige;
+	std::array<GLfloat, 4> vWhite;
+	std::array<GLfloat, 4> vGray;
 };
 
