@@ -1,7 +1,10 @@
 #include "Cloth_GPU2.h"
 #include "glm\gtc\type_ptr.hpp"
 
-
+GLfloat vRed[] = { 1.0f, 0.0f, 0.0f, 1.0f };
+GLfloat vBeige[] = { 1.0f, 0.8f, 0.7f, 1.0f };
+GLfloat vWhite[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+GLfloat vGray[] = { .25f, .25f, .25f, 1.0f };
 
 Cloth_GPU2::Cloth_GPU2()
 {
@@ -15,26 +18,28 @@ Cloth_GPU2::Cloth_GPU2()
 
 Cloth_GPU2::~Cloth_GPU2()
 {
+	X.clear();
+	X_last.clear();
+	F.clear();
+	indices.clear();
+
+	glDeleteTextures(2, texPosID);
+	glDeleteTextures(2, texPrePosID);
+
+	glDeleteVertexArrays(2, vaoUpdateID);
+	glDeleteVertexArrays(2, vaoRenderID);
+
+	glDeleteBuffers(2, vboID_Pos);
+	glDeleteBuffers(2, vboID_PrePos);
+	glDeleteBuffers(1, &vboIndices);
+
+	glDeleteTransformFeedbacks(1, &tfID);
 }
 
-void Cloth_GPU2::Draw()
+void Cloth_GPU2::Draw(const Transform& transform, const Camera& camera)
 {
-	glm::mat4 T = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-	glm::mat4 Rx = glm::rotate(T,18.0f, glm::vec3(1.0f, 0.0f, 0.0f));
-	glm::mat4 mMV = glm::rotate(Rx, -40.0f, glm::vec3(0.0f, 1.0f, 0.0f));
-	glm::mat4 mP;
-	glm::mat4 mMVP = mP*mMV;
-
-	GLdouble MV[16];
-	for (int j = 0;j<4;j++)
-		for (int i = 0;i<4;i++)
-			MV[i + j * 4] = mMV[j][i];
-	glm::vec3 viewDir;
-	glm::vec3 Up(0, 1, 0);
-	viewDir.x = (float)-MV[2];
-	viewDir.y = (float)-MV[6];
-	viewDir.z = (float)-MV[10];
-	glm::vec3 Right = glm::cross(viewDir, Up);
+	glm::mat4 mMVP = transform.GetMatrix() * camera.GetViewProjection();
+	
 	massSpringShader.Use();
 	glUniformMatrix4fv(massSpringShader("MVP"), 1, GL_FALSE, glm::value_ptr(mMVP));
 	glUniform1f(massSpringShader("dt"), timeStep);
@@ -63,21 +68,17 @@ void Cloth_GPU2::Draw()
 		glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, vboID_Pos[readID]);
 		glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 1, vboID_PrePos[readID]);
 		glEnable(GL_RASTERIZER_DISCARD);    // disable rasterization
-		glBeginQuery(GL_TIME_ELAPSED, t_query);
+
 		glBeginTransformFeedback(GL_POINTS);
 		glDrawArrays(GL_POINTS, 0, total_points);
 		glEndTransformFeedback();
-		glEndQuery(GL_TIME_ELAPSED);
+
 		glFlush();
 		glDisable(GL_RASTERIZER_DISCARD);
 
-		int tmp = readID;
-		readID = writeID;
-		writeID = tmp;
+		std::swap(readID, writeID);
 	}
 	// get the query result 
-	glGetQueryObjectui64v(t_query, GL_QUERY_RESULT, &elapsed_time);
-	delta_time = elapsed_time / 1000000.0f;
 	massSpringShader.UnUse();
 
 	//CHECK_GL_ERRORS;
@@ -245,7 +246,7 @@ void Cloth_GPU2::setupShaders()
 	massSpringShader.UnUse();
 
 
-		particleShader.CreateAndLinkProgram();
+	particleShader.CreateAndLinkProgram();
 	particleShader.Use();
 	particleShader.AddAttribute("position_mass");
 	particleShader.AddUniform("pointSize");
@@ -254,7 +255,7 @@ void Cloth_GPU2::setupShaders()
 	particleShader.AddUniform("vColor");
 	particleShader.AddUniform("selected_index");
 	glUniform1f(particleShader("pointSize"), pointSize);
-	//glUniform4fv(particleShader("vColor"), 1, vRed);
+	glUniform4fv(particleShader("vColor"), 1, vRed);
 	particleShader.UnUse();
 
 	renderShader.CreateAndLinkProgram();
@@ -262,6 +263,6 @@ void Cloth_GPU2::setupShaders()
 	renderShader.AddAttribute("position_mass");
 	renderShader.AddUniform("MVP");
 	renderShader.AddUniform("vColor");
-	//glUniform4fv(renderShader("vColor"), 1, vGray);
+	glUniform4fv(renderShader("vColor"), 1, vGray);
 	renderShader.UnUse();
 }

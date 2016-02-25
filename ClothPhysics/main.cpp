@@ -42,8 +42,9 @@ int main(int argc, char ** argv[])
 	Basic_Shader shader("./shaders/space");
 	Phong_Shader phong("./shaders/phong");
 	Texture texture("./textures/white.jpg");
-	glm::vec3 cameraStartPosition = glm::vec3(0, 0, -0.5f);
+	glm::vec3 cameraStartPosition = glm::vec3(-1, 6, 8);
 	Camera camera(cameraStartPosition, 70.0f, display.GetAspectRation(), 0.01f, 1000.0f);
+	camera.SetForward(glm::vec3(0.1f, -0.4f, -0.9f));
 	
 	Skybox sky;
 	sky.SkyboxInit("./textures/skybox/", "back.jpg", "front.jpg", "left.jpg", "right.jpg", "top.jpg", "bottom.jpg");
@@ -163,7 +164,9 @@ int main(int argc, char ** argv[])
 		if (currentKeyStates[SDL_SCANCODE_P])
 		{
 			glm::vec3 pos = camera.GetPosition();
-			std::cout << pos.x << ", " << pos.y << ", " << pos.z << std::endl;
+			glm::vec3 view = camera.GetForward();
+			std::cout << "position: " << pos.x << ", " << pos.y << ", " << pos.z << "\n";
+			std::cout << "view direction" << view.x << ", " << view.y << ", " << view.z << std::endl;
 		}
 		if (currentKeyStates[SDL_SCANCODE_9])
 		{
@@ -212,7 +215,7 @@ int main(int argc, char ** argv[])
 		{
 			camera.SetSpeed(1.0f);
 			//gpuCloth.Draw(transform, camera);
-			cloth2.Draw();
+			cloth2.Draw(transform, camera);
 		}
 		
 		display.Update();

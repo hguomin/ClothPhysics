@@ -9,7 +9,7 @@ public:
 	Cloth_GPU2();
 	~Cloth_GPU2();
 
-	void Draw();
+	void Draw(const Transform& transform,const Camera& camera );
 
 private:
 	void setupPositions();
@@ -44,37 +44,20 @@ private:
 	float mass = 1.0f;
 
 	float timeStep = 1.0f / 60.0f;
-	float currentTime = 0;
-	double accumulator = timeStep;
 
-	int frequency;        // ticks per second
-	int t1, t2;           // ticks
-	double frameTimeQP = 0;
-	float frameTime = 0;
 	int texture_size_x = numX + 1;
 	int texture_size_y = numY + 1;
 	
-
-	float startTime = 0, fps = 0;
-	int totalFrames = 0;
-	GLuint primitives_written = 0;
 	GLfloat pointSize = 30;
-
-	float delta_time = 0;
 
 	int readID = 0, writeID = 1;
 
-	GLuint	vboID_Pos[2],
-		vboID_PrePos[2];
+	GLuint vboID_Pos[2];
+	GLuint vboID_PrePos[2];
 
 	GLuint vaoUpdateID[2], vaoRenderID[2], vboIndices;
 	GLuint texPosID[2];
 	GLuint texPrePosID[2];
-
-	size_t i = 0;
-
-	GLuint t_query, query;
-	GLuint64 elapsed_time;
 
 	GLuint tfID;
 };
