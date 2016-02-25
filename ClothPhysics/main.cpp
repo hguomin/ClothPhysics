@@ -16,6 +16,7 @@
 #include "GridMesh.h"
 #include "Cloth2.h"
 #include "Cloth_GPU.h"
+#include "Cloth_GPU2.h"
 
 #include <iostream>
 #include <algorithm>
@@ -52,6 +53,7 @@ int main(int argc, char ** argv[])
 
 	Cloth2 cloth(8, 8, 75, 75);
 	Cloth_GPU gpuCloth;
+	Cloth_GPU2 cloth2;
 
 	float counter = 0.0f;
 	Mesh monkey("./models/monkey3.obj");
@@ -209,7 +211,8 @@ int main(int argc, char ** argv[])
 		else
 		{
 			camera.SetSpeed(1.0f);
-			gpuCloth.Draw(transform, camera);
+			//gpuCloth.Draw(transform, camera);
+			cloth2.Draw();
 		}
 		
 		display.Update();
