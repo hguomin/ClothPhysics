@@ -1,10 +1,12 @@
 #include "Phong_Shader.h"
 #include "glm\glm.hpp"
 #include "glm\gtc\type_ptr.hpp"
+#include "GLError.h"
 
 
 Phong_Shader::Phong_Shader(const std::string& filePath) : Basic_Shader(filePath)
 {
+	
 	Use();
 	AddUniform("u_cameraPosition");
 
@@ -19,6 +21,7 @@ Phong_Shader::Phong_Shader(const std::string& filePath) : Basic_Shader(filePath)
 	AddUniform("u_matShininess");
 
 	UnUse();
+	
 }
 
 

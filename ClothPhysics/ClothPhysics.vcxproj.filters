@@ -84,6 +84,12 @@
     <ClCompile Include="TransformFeedback_Shader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Cloth_GPU2.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GLError.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Display.h">
@@ -150,6 +156,12 @@
       <Filter>Header Files\Different Shaders</Filter>
     </ClInclude>
     <ClInclude Include="TransformFeedback_Shader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Cloth_GPU2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GLError.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

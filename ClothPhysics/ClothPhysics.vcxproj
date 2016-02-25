@@ -83,6 +83,7 @@
     <ClCompile Include="Cloth_GPU.cpp" />
     <ClCompile Include="Cloth_GPU2.cpp" />
     <ClCompile Include="Display.cpp" />
+    <ClCompile Include="GLError.cpp" />
     <ClCompile Include="GridMesh.cpp" />
     <ClCompile Include="Keyboard.cpp" />
     <ClCompile Include="main.cpp" />
@@ -105,6 +106,7 @@
     <ClInclude Include="Cloth_GPU.h" />
     <ClInclude Include="Cloth_GPU2.h" />
     <ClInclude Include="Display.h" />
+    <ClInclude Include="GLError.h" />
     <ClInclude Include="GridMesh.h" />
     <ClInclude Include="Keyboard.h" />
     <ClInclude Include="Mesh.h" />

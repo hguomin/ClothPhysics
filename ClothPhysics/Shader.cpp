@@ -1,6 +1,7 @@
 #include "Shader.h"
 #include <iostream>
 #include <fstream>
+#include "GLError.h"
 
 
 
@@ -15,6 +16,7 @@ Shader::Shader()
 	m_totalShaders = 0;
 	m_attributeList.clear();
 	m_uniformLocationList.clear();
+	m_shaders.resize(6,0);
 }
 
 
@@ -29,10 +31,11 @@ void Shader::LoadFromString(GLenum type, const std::string& source)
 	GLuint shader = glCreateShader(type);
 
 	const char* ptmp = source.c_str();
-	glShaderSource(shader, 1, &ptmp, NULL);
-
+	glShaderSource(shader, 1, &ptmp, 0);
+	
 	glCompileShader(shader);
-	PrintError(shader);
+	
+	PrintShaderError(shader);
 	m_shaders[m_totalShaders++] = shader;
 }
 
@@ -44,66 +47,110 @@ GLuint Shader::LoadFromStringAndReturn(GLenum type, const std::string& source)
 	glShaderSource(shader, 1, &ptmp, NULL);
 
 	glCompileShader(shader);
-	Shader::PrintError(shader);
+	Shader::PrintShaderError(shader);
 	return shader;
 }
 
 void Shader::CreateAndLinkProgram()
 {
 	m_program = glCreateProgram();
+	
 	if (m_shaders[ShaderType[GL_VERTEX_SHADER]] != 0)
 	{
 		glAttachShader(m_program, m_shaders[ShaderType[GL_VERTEX_SHADER]]);
+		
 	}
 	if (m_shaders[ShaderType[GL_FRAGMENT_SHADER]] != 0)
 	{
 		glAttachShader(m_program, m_shaders[ShaderType[GL_FRAGMENT_SHADER]]);
+		
 	}
 	if (m_shaders[ShaderType[GL_GEOMETRY_SHADER]] != 0)
 	{
 		glAttachShader(m_program, m_shaders[ShaderType[GL_GEOMETRY_SHADER]]);
+		
 	}
 	if (m_shaders[ShaderType[GL_TESS_CONTROL_SHADER]] != 0)
 	{
 		glAttachShader(m_program, m_shaders[ShaderType[GL_TESS_CONTROL_SHADER]]);
+		
 	}
 	if (m_shaders[ShaderType[GL_TESS_EVALUATION_SHADER]] != 0)
 	{
 		glAttachShader(m_program, m_shaders[ShaderType[GL_TESS_EVALUATION_SHADER]]);
+		
 	}
 	if (m_shaders[ShaderType[GL_COMPUTE_SHADER]] != 0)
 	{
-		glAttachShader(m_program, m_shaders[ShaderType[GL_TESS_EVALUATION_SHADER]]);
+		glAttachShader(m_program, m_shaders[ShaderType[GL_COMPUTE_SHADER]]);
+		
 	}
-
+	
 	glLinkProgram(m_program);
-	PrintError(m_program);
-
+	
+	//PrintShaderError(m_program);
+	
+	for (auto it = ShaderType.cbegin(); it != ShaderType.cend(); it++)
+	{
+		glDeleteShader(m_shaders[(*it).second]);
+		
+	}
+	/*
 	glDeleteShader(m_shaders[ShaderType[GL_VERTEX_SHADER]]);
 	glDeleteShader(m_shaders[ShaderType[GL_FRAGMENT_SHADER]]);
 	glDeleteShader(m_shaders[ShaderType[GL_GEOMETRY_SHADER]]);
 	glDeleteShader(m_shaders[ShaderType[GL_TESS_CONTROL_SHADER]]);
 	glDeleteShader(m_shaders[ShaderType[GL_TESS_EVALUATION_SHADER]]);
 	glDeleteShader(m_shaders[ShaderType[GL_TESS_EVALUATION_SHADER]]);
+	*/
+	
 }
 
-void Shader::PrintError(GLuint programOrShader)
+void Shader::PrintShaderError(GLuint shader)
 {
 	GLint status;
-	glGetShaderiv(programOrShader, GL_COMPILE_STATUS, &status);
+	
+	glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
+	
 	if (status == GL_FALSE) {
 		GLint infoLogLength;
-		glGetShaderiv(programOrShader, GL_INFO_LOG_LENGTH, &infoLogLength);
+		glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &infoLogLength);
+		
 		GLchar *infoLog = new GLchar[infoLogLength];
-		glGetShaderInfoLog(programOrShader, infoLogLength, NULL, infoLog);
+		glGetShaderInfoLog(shader, infoLogLength, NULL, infoLog);
+		
 		std::cerr << "Compile log: " << infoLog << std::endl;
 		delete[] infoLog;
 	}
 }
 
+void Shader::PrintProgramError(GLuint program)
+{
+	//dumdum check
+	glValidateProgram(program);
+		GLint status;
+		
+		glGetProgramiv(program, GL_VALIDATE_STATUS, &status);
+		
+		if (status == GL_FALSE)
+		{
+			GLint infoLogLength;
+			glGetProgramiv(program, GL_INFO_LOG_LENGTH, &infoLogLength);
+			
+			GLchar *infoLog = new GLchar[infoLogLength];
+			glGetProgramInfoLog(program, infoLogLength, NULL, infoLog);
+			
+			std::cerr << "Program log: " << infoLog << std::endl;
+			delete[] infoLog;
+		}
+}
+
 void Shader::Use()
 {
+	
+	//PrintProgramError(m_program);
 	glUseProgram(m_program);
+	
 }
 
 void Shader::UnUse()

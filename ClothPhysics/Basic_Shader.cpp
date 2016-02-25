@@ -1,4 +1,5 @@
 #include "Basic_Shader.h"
+#include "GLError.h"
 
 Basic_Shader::Basic_Shader()
 {
@@ -8,13 +9,18 @@ Basic_Shader::Basic_Shader()
 Basic_Shader::Basic_Shader(const std::string& filePath)
 {
 	LoadFromFile(GL_VERTEX_SHADER, filePath + ".vert");
+	
 	LoadFromFile(GL_FRAGMENT_SHADER, filePath + ".frag");
+	
 	CreateAndLinkProgram();
+	
 	Use();
+	
 	AddUniform("model");
 	AddUniform("view");
 	AddUniform("projection");
 	UnUse();
+	
 }
 
 

@@ -1,6 +1,8 @@
 #include "Cloth_GPU2.h"
 #include "glm\gtc\type_ptr.hpp"
 
+#include "GLError.h"
+
 
 
 Cloth_GPU2::Cloth_GPU2()
@@ -12,8 +14,11 @@ Cloth_GPU2::Cloth_GPU2()
 	setupPositions();
 	setupIndices();
 	setupShaders();
+	
 	createVBO();
+	
 	setupTransformFeedback();
+	
 }
 
 
@@ -109,16 +114,19 @@ void Cloth_GPU2::Draw(const Transform& transform, const Camera& camera)
 
 void Cloth_GPU2::createVBO()
 {
+	
 	glGenVertexArrays(2, vaoUpdateID);
 	glGenVertexArrays(2, vaoRenderID);
-
+	
 	glGenBuffers(2, vboID_Pos);
 	glGenBuffers(2, vboID_PrePos);
 	glGenBuffers(1, &vboIndices);
-
+	
 	glGenTextures(2, texPosID);
 	glGenTextures(2, texPrePosID);
 
+	
+	
 	//set update vao
 	for (unsigned int i = 0; i < 2; i++)
 	{
@@ -127,11 +135,13 @@ void Cloth_GPU2::createVBO()
 		glBufferData(GL_ARRAY_BUFFER, X.size()*sizeof(glm::vec4), &X[0].x, GL_DYNAMIC_COPY);
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
+		
 
 		glBindBuffer(GL_ARRAY_BUFFER, vboID_PrePos[i]);
 		glBufferData(GL_ARRAY_BUFFER, X_last.size()*sizeof(glm::vec4), &X_last[0].x, GL_DYNAMIC_COPY);
 		glEnableVertexAttribArray(1);
 		glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, 0);
+		
 	}
 
 	//set render vao
@@ -141,11 +151,13 @@ void Cloth_GPU2::createVBO()
 		glBindBuffer(GL_ARRAY_BUFFER, vboID_Pos[i]);
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
+		
 
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vboIndices);
 		if (i == 0) //only need one element array.
 		{
 			glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size()*sizeof(GLushort), &indices[0], GL_STATIC_DRAW);
+			
 		}
 	}
 
@@ -156,11 +168,15 @@ void Cloth_GPU2::createVBO()
 	{
 		glBindTexture(GL_TEXTURE_BUFFER, texPosID[i]);
 		glTexBuffer(GL_TEXTURE_BUFFER, GL_RGBA32F, vboID_Pos[i]);
+		
 
 		glBindTexture(GL_TEXTURE_BUFFER, texPrePosID[i]);
 		glTexBuffer(GL_TEXTURE_BUFFER, GL_RGBA32F, vboID_PrePos[i]);
+		
 	}
 	glBindVertexArray(0);
+
+	
 }
 
 void Cloth_GPU2::setupTransformFeedback()
@@ -215,12 +231,20 @@ void Cloth_GPU2::setupIndices()
 void Cloth_GPU2::setupShaders()
 {
 	massSpringShader.LoadFromFile(GL_VERTEX_SHADER, "shaders/Spring.vp");
+	
 	particleShader.LoadFromFile(GL_VERTEX_SHADER, "shaders/Basic.vp");
+	
 	particleShader.LoadFromFile(GL_FRAGMENT_SHADER, "shaders/Basic.fp");
+	
 	renderShader.LoadFromFile(GL_VERTEX_SHADER, "shaders/Passthrough.vp");
+	
 	renderShader.LoadFromFile(GL_FRAGMENT_SHADER, "shaders/Passthrough.fp");
+	
 	massSpringShader.CreateAndLinkProgram();
+	
+	glActiveTexture(0);
 	massSpringShader.Use();
+	
 	massSpringShader.AddAttribute("position_mass");
 	massSpringShader.AddAttribute("prev_position");
 	massSpringShader.AddUniform("tex_position_mass");
@@ -242,7 +266,9 @@ void Cloth_GPU2::setupShaders()
 	massSpringShader.AddUniform("ellipsoid");
 
 	glUniform1i(massSpringShader("tex_position_mass"), 0);
+	
 	glUniform1i(massSpringShader("tex_pre_position_mass"), 1);
+	
 
 	massSpringShader.UnUse();
 

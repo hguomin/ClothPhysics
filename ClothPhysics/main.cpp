@@ -23,6 +23,8 @@
 #include <stdlib.h>
 #include <time.h>
 
+#include "GLError.h"
+
 /*https://www.youtube.com/watch?v=RqRxhY6iLto */
 
 #define DESIRED_FPS 120.0f
@@ -35,31 +37,47 @@ bool GPU = true;
 
 int main(int argc, char ** argv[])
 {
-
 	Display display(800, 600, "TSBK07 Space");
+	
 	TwInit(TW_OPENGL, NULL);
+	
 	TwWindowSize(800, 600);
+	
 	Basic_Shader shader("./shaders/space");
+	
 	Phong_Shader phong("./shaders/phong");
+	
 	Texture texture("./textures/white.jpg");
+	
 	glm::vec3 cameraStartPosition = glm::vec3(-1, 6, 8);
+	
 	Camera camera(cameraStartPosition, 70.0f, display.GetAspectRation(), 0.01f, 1000.0f);
+	
 	camera.SetForward(glm::vec3(0.1f, -0.4f, -0.9f));
 	
-	Skybox sky;
-	sky.SkyboxInit("./textures/skybox/", "back.jpg", "front.jpg", "left.jpg", "right.jpg", "top.jpg", "bottom.jpg");
-	Transform transform;
-	Keyboard keyboard;
-	Mouse mouse;
 
+	Skybox sky;
+	
+	sky.SkyboxInit("./textures/skybox/", "back.jpg", "front.jpg", "left.jpg", "right.jpg", "top.jpg", "bottom.jpg");
+	
+	Transform transform;
+	
+	Keyboard keyboard;
+	
+	Mouse mouse;
+	
 	Cloth2 cloth(8, 8, 75, 75);
+	
 	Cloth_GPU gpuCloth;
+	
 	Cloth_GPU2 cloth2;
+	
 
 	float counter = 0.0f;
 	Mesh monkey("./models/monkey3.obj");
+	
 	Mesh box("./models/box.obj");
-
+	
 	glm::vec3 wind(0, 0, 1);
 	float windX = 0.0f;
 	float windY = 0.0f;
@@ -67,20 +85,29 @@ int main(int argc, char ** argv[])
 	unsigned int iterations = 3;
 
 	TwBar *myBar;
+	
 	myBar = TwNewBar("Hello!");
+	
 	TwAddVarRW(myBar, "Wind X", TW_TYPE_FLOAT, &windX, NULL);
+	
 	TwAddVarRW(myBar, "Wind Y", TW_TYPE_FLOAT, &windY, NULL);
+	
 	TwAddVarRW(myBar, "Wind Z", TW_TYPE_FLOAT, &windZ, NULL);
+	
 	TwAddVarRW(myBar, "Iterations", TW_TYPE_UINT16, &iterations, NULL);
+	
 
 	std::cout << "init complete" << std::endl;
 
 	float previousTicks = (float)SDL_GetTicks();
+	
 	srand((unsigned int)time(NULL));
 
 	SDL_Event sdl_event;
 	int handled;
 	
+	
+
 	while (!display.IsClosed())
 	{
 		//time handling
@@ -91,6 +118,7 @@ int main(int argc, char ** argv[])
 
 		display.Clear(1, 0, 1, 1);
 
+		
 		while (SDL_PollEvent(&sdl_event))
 		{
 			handled = TwEventSDL(&sdl_event, SDL_MAJOR_VERSION, SDL_MINOR_VERSION);
@@ -106,7 +134,7 @@ int main(int argc, char ** argv[])
 				}
 			}
 		}
-
+		
 		const Uint8* currentKeyStates = SDL_GetKeyboardState(NULL);
 
 		keyboard.HandleEvent(currentKeyStates, camera);
@@ -177,8 +205,7 @@ int main(int argc, char ** argv[])
 		{
 			GPU = !GPU;
 		}
-
-
+		
 
 		if (!GPU)
 		{
@@ -209,15 +236,17 @@ int main(int argc, char ** argv[])
 			}
 			//cloth.Update(0.01f, wind, iterations);
 			cloth.Draw();
-			TwDraw();
+			
 		}
 		else
 		{
-			camera.SetSpeed(1.0f);
+			camera.SetSpeed(0.5f);
 			//gpuCloth.Draw(transform, camera);
 			cloth2.Draw(transform, camera);
+			
 		}
 		
+		TwDraw();
 		display.Update();
 		
 
