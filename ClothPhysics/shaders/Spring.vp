@@ -11,6 +11,10 @@ precision highp float;
 
 layout( location = 0 )  in vec4 position_mass;
 layout( location = 1 )  in vec4 prev_position;
+
+layout( location = 2 )  in ivec4 spring_struct;
+layout( location = 3 )  in ivec4 spring_shear;
+layout( location = 4 )  in ivec4 spring_bend;
  
 uniform mat4 MVP;
 uniform samplerBuffer tex_position_mass;
@@ -21,6 +25,9 @@ uniform int texsize_x;					//size of position texture
 uniform int texsize_y; 
 uniform float dt, ksStr, ksShr, ksBnd, 
 				 kdStr, kdShr, kdBnd, DEFAULT_DAMPING;
+uniform float rest_struct;
+uniform float rest_shear;
+uniform float rest_bend;
   
 uniform vec3 gravity;
  
@@ -91,6 +98,19 @@ void sphereCollision(inout vec3 x, vec3 center, float r)
 	}
 } 
  
+ vec3 calcSpringForce(vec3 p1,vec3 p1_last,vec3 p1_vel, vec3 p2,vec3 p2_last,float rest_length,float ks,float kd)
+ {
+	
+	vec3 v2 = (p2- p2_last)/dt;
+	vec3 deltaP = p1 - p2;	
+	vec3 deltaV = p1_vel - v2;	 
+	float dist = length(deltaP);
+				
+	float  leftTerm = -ks * (dist-rest_length);
+	float  rightTerm = kd * (dot(deltaV, deltaP)/dist);		
+	vec3 springForce = (leftTerm + rightTerm)* normalize(deltaP);
+	return springForce;
+ }
  
 void main(void) 
 {  
@@ -104,34 +124,36 @@ void main(void)
 	int iy = index / texsize_x;
 	
     vec3 F = gravity*m + (DEFAULT_DAMPING*vel);
-	
-	for(int k=0;k<12;k++) {
-		ivec2 coord = getNextNeighbor(k, ks, kd);
-		int j = coord.x;
-		int i = coord.y;		
-		if (((iy + i) < 0) || ((iy + i) > (texsize_y-1)))
-			continue;
+	for	(int i = 0; i < 4;i++)
+	{
+		int index_neigh = spring_struct[i];
+		if (index_neigh != -1)
+		{
+			vec3 p2 = texelFetch(tex_position_mass, index_neigh).xyz;
+			vec3 p2_last = texelFetch(tex_prev_position_mass, index_neigh).xyz;
+			F+= calcSpringForce(pos,pos_old,vel, p2,p2_last,rest_struct,ksStr,kdStr);
+		}
+	}
 
-		if (((ix + j) < 0) || ((ix + j) > (texsize_x-1)))
-			continue;
-
-		int index_neigh = (iy + i) * texsize_x + ix + j;
-
-		vec3 p2 = texelFetch(tex_position_mass, index_neigh).xyz;
-		vec3 p2_last = texelFetch(tex_prev_position_mass, index_neigh).xyz;
-		
-		vec2 coord_neigh = vec2(ix + j, iy + i)*step;
-		float rest_length = length(coord*inv_cloth_size);
-
-		vec3 v2 = (p2- p2_last)/dt;
-		vec3 deltaP = pos - p2;	
-		vec3 deltaV = vel - v2;	 
-		float dist = length(deltaP);
-				
-		float   leftTerm = -ks * (dist-rest_length);
-		float  rightTerm = kd * (dot(deltaV, deltaP)/dist);		
-		vec3 springForce = (leftTerm + rightTerm)* normalize(deltaP);
-		F +=  springForce;	
+	for(int i = 0; i < 4; i ++)
+	{
+		int index_neigh = spring_shear[i];
+		if (index_neigh != -1)
+		{
+			vec3 p2 = texelFetch(tex_position_mass, index_neigh).xyz;
+			vec3 p2_last = texelFetch(tex_prev_position_mass, index_neigh).xyz;
+			F+= calcSpringForce(pos,pos_old,vel, p2,p2_last,rest_shear,ksShr,kdShr);
+		}
+	}
+	for( int i = 0; i < 4; i++)
+	{
+		int index_neigh = spring_bend[i];
+		if (index_neigh != -1)
+		{
+			vec3 p2 = texelFetch(tex_position_mass, index_neigh).xyz;
+			vec3 p2_last = texelFetch(tex_prev_position_mass, index_neigh).xyz;
+			F+= calcSpringForce(pos,pos_old,vel,p2,p2_last,rest_bend,ksBnd,kdBnd);
+		}
 	}
     vec3 acc = vec3(0);
 	if(m!=0)

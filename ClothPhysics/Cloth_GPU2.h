@@ -47,7 +47,11 @@ private:
 	float	KsShear = 50.75f, KdShear = -0.25f;
 	float	KsBend = 50.95f, KdBend = -0.25f;
 	glm::vec3 gravity = glm::vec3(0.0f, -0.00981f, 0.0f);
+	glm::vec2 inv_cloth_size = glm::vec2(float(sizeX) / numX, float(sizeY) / numY);
 	float mass = 1.0f;
+	float rest_struct;
+	float rest_shear;
+	float rest_bend;
 
 	float timeStep = 1.0f / 60.0f;
 
@@ -60,8 +64,10 @@ private:
 
 	GLuint vboID_Pos[2];
 	GLuint vboID_PrePos[2];
+	GLuint vboID_Struct, vboID_Shear, vboID_Bend;
 
 	GLuint vaoUpdateID[2], vaoRenderID[2], vboIndices;
+	
 	GLuint texPosID[2];
 	GLuint texPrePosID[2];
 

@@ -61,8 +61,11 @@ void Cloth_GPU2::Draw(const Transform& transform, const Camera& camera)
 	glUniform1f(massSpringShader("DEFAULT_DAMPING"), DEFAULT_DAMPING);
 	glUniform1i(massSpringShader("texsize_x"), texture_size_x);
 	glUniform1i(massSpringShader("texsize_y"), texture_size_y);
+	glUniform1f(massSpringShader("rest_struct"), rest_struct);
+	glUniform1f(massSpringShader("rest_shear"), rest_shear);
+	glUniform1f(massSpringShader("rest_bend"), rest_bend);
 
-	glUniform2f(massSpringShader("inv_cloth_size"), float(sizeX) / numX, float(sizeY) / numY);
+	glUniform2f(massSpringShader("inv_cloth_size"),inv_cloth_size.x, inv_cloth_size.y);
 	glUniform2f(massSpringShader("step"), 1.0f / (texture_size_x - 1.0f), 1.0f / (texture_size_y - 1.0f));
 
 	for (int i = 0;i<NUM_ITER;i++) {
@@ -123,6 +126,10 @@ void Cloth_GPU2::createVBO()
 	glGenBuffers(2, vboID_Pos);
 	glGenBuffers(2, vboID_PrePos);
 	glGenBuffers(1, &vboIndices);
+
+	glGenBuffers(1, &vboID_Struct);
+	glGenBuffers(1, &vboID_Shear);
+	glGenBuffers(1, &vboID_Bend);
 	
 	glGenTextures(2, texPosID);
 	glGenTextures(2, texPrePosID);
@@ -143,6 +150,21 @@ void Cloth_GPU2::createVBO()
 		glBufferData(GL_ARRAY_BUFFER, X_last.size()*sizeof(glm::vec4), &X_last[0].x, GL_DYNAMIC_COPY);
 		glEnableVertexAttribArray(1);
 		glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, 0);
+
+		glBindBuffer(GL_ARRAY_BUFFER, vboID_Struct);
+		glBufferData(GL_ARRAY_BUFFER, struct_springs.size()*sizeof(glm::ivec4), &struct_springs[0].x, GL_STATIC_COPY);
+		glEnableVertexAttribArray(2);
+		glVertexAttribPointer(2, 4, GL_INT, GL_FALSE, 0, 0);
+
+		glBindBuffer(GL_ARRAY_BUFFER, vboID_Shear);
+		glBufferData(GL_ARRAY_BUFFER, shear_springs.size()*sizeof(glm::ivec4), &shear_springs[0].x, GL_STATIC_COPY);
+		glEnableVertexAttribArray(3);
+		glVertexAttribPointer(3, 4, GL_INT, GL_FALSE, 0, 0);
+
+		glBindBuffer(GL_ARRAY_BUFFER, vboID_Bend);
+		glBufferData(GL_ARRAY_BUFFER, bend_springs.size()*sizeof(glm::ivec4), &bend_springs[0].x, GL_STATIC_COPY);
+		glEnableVertexAttribArray(4);
+		glVertexAttribPointer(4, 4, GL_INT, GL_FALSE, 0, 0);
 		
 	}
 
@@ -253,6 +275,11 @@ void Cloth_GPU2::setupShaders()
 	
 	massSpringShader.AddAttribute("position_mass");
 	massSpringShader.AddAttribute("prev_position");
+	
+	massSpringShader.AddAttribute("spring_struct");
+	massSpringShader.AddAttribute("spring_shear");
+	massSpringShader.AddAttribute("spring_bend");
+
 	massSpringShader.AddUniform("tex_position_mass");
 	massSpringShader.AddUniform("tex_pre_position_mass");
 	massSpringShader.AddUniform("MVP");
@@ -269,6 +296,9 @@ void Cloth_GPU2::setupShaders()
 	massSpringShader.AddUniform("texsize_y");
 	massSpringShader.AddUniform("step");
 	massSpringShader.AddUniform("inv_cloth_size");
+	massSpringShader.AddUniform("rest_struct");
+	massSpringShader.AddUniform("rest_shear");
+	massSpringShader.AddUniform("rest_bend");
 	massSpringShader.AddUniform("ellipsoid");
 
 	glUniform1i(massSpringShader("tex_position_mass"), 0);
@@ -341,6 +371,9 @@ void Cloth_GPU2::setupSprings()
 			bend_springs.push_back(temp);
 		}
 	}
+	rest_struct = glm::length(glm::vec2(0, 1)*inv_cloth_size);
+	rest_shear = glm::length(glm::vec2(1, 1)*inv_cloth_size);
+	rest_bend = glm::length(glm::vec2(0, 2)*inv_cloth_size);
 }
 
 glm::ivec2 Cloth_GPU2::getNextNeighbor(int n) {
