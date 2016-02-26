@@ -154,17 +154,17 @@ void Cloth_GPU2::createVBO()
 		glBindBuffer(GL_ARRAY_BUFFER, vboID_Struct);
 		glBufferData(GL_ARRAY_BUFFER, struct_springs.size()*sizeof(glm::ivec4), &struct_springs[0].x, GL_STATIC_COPY);
 		glEnableVertexAttribArray(2);
-		glVertexAttribPointer(2, 4, GL_INT, GL_FALSE, 0, 0);
+		glVertexAttribIPointer(2, 4, GL_INT,  0, 0);
 
 		glBindBuffer(GL_ARRAY_BUFFER, vboID_Shear);
 		glBufferData(GL_ARRAY_BUFFER, shear_springs.size()*sizeof(glm::ivec4), &shear_springs[0].x, GL_STATIC_COPY);
 		glEnableVertexAttribArray(3);
-		glVertexAttribPointer(3, 4, GL_INT, GL_FALSE, 0, 0);
+		glVertexAttribIPointer(3, 4, GL_INT,  0, 0);
 
 		glBindBuffer(GL_ARRAY_BUFFER, vboID_Bend);
 		glBufferData(GL_ARRAY_BUFFER, bend_springs.size()*sizeof(glm::ivec4), &bend_springs[0].x, GL_STATIC_COPY);
 		glEnableVertexAttribArray(4);
-		glVertexAttribPointer(4, 4, GL_INT, GL_FALSE, 0, 0);
+		glVertexAttribIPointer(4, 4, GL_INT, 0, 0);
 		
 	}
 
