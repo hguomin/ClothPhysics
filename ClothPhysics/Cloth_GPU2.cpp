@@ -14,6 +14,7 @@ Cloth_GPU2::Cloth_GPU2()
 	vGray = { .25f, .25f, .25f, 1.0f };
 	setupPositions();
 	setupIndices();
+	setupSprings();
 	setupShaders();
 	
 	createVBO();
@@ -297,4 +298,90 @@ void Cloth_GPU2::setupShaders()
 	renderShader.AddUniform("vColor");
 	glUniform4fv(renderShader("vColor"), 1, &vGray[0]);
 	renderShader.UnUse();
+}
+
+void Cloth_GPU2::setupSprings()
+{
+	for (int iy = 0; iy <= numY; iy++)
+	{
+		for (int ix = 0; ix <= numX; ix++)
+		{
+			std::vector<int> index_neigh;
+			for (int k = 0;k < 12;k++) {
+				glm::ivec2 coord = getNextNeighbor(k);
+				int j = coord.x;
+				int i = coord.y;
+				if (((iy + i) < 0) || ((iy + i) > (texture_size_y - 1)))
+				{
+					index_neigh.push_back(-1);
+					continue;
+				}
+				if (((ix + j) < 0) || ((ix + j) > (texture_size_x - 1)))
+				{
+					index_neigh.push_back(-1);
+					continue;
+				}
+				index_neigh.push_back((iy + i) * texture_size_x + ix + j);
+			}
+			glm::ivec4 temp;
+			for (int i = 0; i < 4; i++)
+			{
+				temp[i] = index_neigh[i];
+			}
+			struct_springs.push_back(temp);
+			for (int i = 4; i < 8; i++)
+			{
+				temp[i - 4] = index_neigh[i];
+			}
+			shear_springs.push_back(temp);
+			for (int i = 8; i < 12; i++)
+			{
+				temp[i - 8] = index_neigh[i];
+			}
+			bend_springs.push_back(temp);
+		}
+	}
+}
+
+glm::ivec2 Cloth_GPU2::getNextNeighbor(int n) {
+	//structural springs (adjacent neighbors)
+	//        o
+	//        |
+	//     o--m--o
+	//        |
+	//        o
+	
+	if (n == 0)	return glm::ivec2(1, 0);
+	if (n == 1)	return glm::ivec2(0, -1);
+	if (n == 2)	return glm::ivec2(-1, 0);
+	if (n == 3)	return glm::ivec2(0, 1);
+
+	//shear springs (diagonal neighbors)
+	//     o  o  o
+	//      \   /
+	//     o  m  o
+	//      /   \
+				//     o  o  o
+	
+	if (n == 4) return glm::ivec2(1, -1);
+	if (n == 5) return glm::ivec2(-1, -1);
+	if (n == 6) return glm::ivec2(-1, 1);
+	if (n == 7) return glm::ivec2(1, 1);
+
+	//bend spring (adjacent neighbors 1 node away)
+	//
+	//o   o   o   o   o
+	//        | 
+	//o   o   |   o   o
+	//        |   
+	//o-------m-------o
+	//        |  
+	//o   o   |   o   o
+	//        |
+	//o   o   o   o   o 
+	
+	if (n == 8)	return glm::ivec2(2, 0);
+	if (n == 9) return glm::ivec2(0, -2);
+	if (n == 10) return glm::ivec2(-2, 0);
+	if (n == 11) return glm::ivec2(0, 2);
 }

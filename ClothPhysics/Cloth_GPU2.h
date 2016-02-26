@@ -16,6 +16,8 @@ private:
 	void setupPositions();
 	void setupIndices();
 	void setupShaders();
+	void setupSprings();
+	glm::ivec2 getNextNeighbor(int n);
 	void createVBO();
 	void setupTransformFeedback();
 	Basic_Shader massSpringShader;
@@ -24,7 +26,7 @@ private:
 
 
 	const int width = 1024, height = 1024;
-	const int numX = 63, numY = 63;
+	const int numX = 2, numY = 2;
 	const int total_points = (numX + 1)*(numY + 1);
 	const int sizeX = 4, sizeY = 4;
 	const float hsize = sizeX / 2.0f;
@@ -36,6 +38,9 @@ private:
 	std::vector<glm::vec4> X_last;	//previous positions
 	std::vector<glm::vec3> F;
 	std::vector<GLushort> indices;
+	std::vector<glm::ivec4> struct_springs;
+	std::vector<glm::ivec4> shear_springs;
+	std::vector<glm::ivec4> bend_springs;
 
 	const float DEFAULT_DAMPING = -0.0125f;
 	float	KsStruct = 50.75f, KdStruct = -0.25f;
