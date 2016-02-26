@@ -199,7 +199,12 @@ void Cloth_GPU2::setupPositions()
 	//fill in positions
 	for (int j = 0;j <= numY;j++) {
 		for (int i = 0;i <= numX;i++) {
-			X[count] = glm::vec4(((float(i) / (u - 1)) * 2 - 1)* hsize, sizeX + 1, ((float(j) / (v - 1))* sizeY), 1);
+			glm::vec4 temp = glm::vec4(((float(i) / (u - 1)) * 2 - 1)* hsize, sizeX + 1, ((float(j) / (v - 1))* sizeY), 1);
+			if ((j == 0 && i == 0) || (j == 0 && i == numX)) //force corners to be fixed
+			{
+				temp.w = 0.0f;
+			}
+			X[count] = temp;
 			X_last[count] = X[count];
 			count++;
 		}
