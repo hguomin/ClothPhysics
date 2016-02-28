@@ -31,8 +31,9 @@ uniform float rest_bend;
   
 uniform vec3 gravity;
  
-out vec4 out_position_mass;
-out	vec4 out_prev_position;
+out vec4 to_gs_position_mass;
+out	vec4 to_gs_prev_position;
+out int to_gs_geom;
  
 // Resolve constraint in this space
 const vec3 center = vec3(0,0,0);
@@ -164,7 +165,8 @@ void main(void)
 	pos = pos * 2.0 - pos_old + acc* dt * dt;
 	pos_old = tmp;
 
-	out_position_mass = vec4(pos, m);	
-	out_prev_position = vec4(pos_old,m);			  
+	to_gs_position_mass = vec4(pos, m);	
+	to_gs_prev_position = vec4(pos_old,m);	
+	to_gs_geom = gl_VertexID;
 	gl_Position = MVP*vec4(pos, 1);
 }

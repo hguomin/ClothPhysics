@@ -164,6 +164,9 @@
     <ClInclude Include="GLError.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="GLHelperFunctions.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\space.frag">

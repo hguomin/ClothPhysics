@@ -2,6 +2,7 @@
 #include "glm\gtc\type_ptr.hpp"
 
 #include "GLError.h"
+#include "GLHelperFunctions.h"
 
 
 
@@ -71,19 +72,29 @@ void Cloth_GPU2::Draw(const Transform& transform, const Camera& camera)
 	for (int i = 0;i<NUM_ITER;i++) {
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_BUFFER, texPosID[writeID]);
-
+		
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_BUFFER, texPrePosID[writeID]);
-
 		glBindVertexArray(vaoUpdateID[writeID]);
 		glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, vboID_Pos[readID]);
+		//std::vector<glm::vec4> temp = DEBUG::GetBufferData<glm::vec4>(GL_TRANSFORM_FEEDBACK_BUFFER, X.size());
+		/*
+		glm::vec4* pBufData = (glm::vec4*)glMapBuffer(GL_TRANSFORM_FEEDBACK_BUFFER, GL_READ_ONLY);
+		glm::vec4 temp = *pBufData;
+		printf("%f, %f, %f, %f\n", temp.x, temp.y, temp.z, temp.w);
+		glUnmapBuffer(GL_TEXTURE_BUFFER);
+		*/
 		glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 1, vboID_PrePos[readID]);
+		glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 2, tbo);
+
 		glEnable(GL_RASTERIZER_DISCARD);    // disable rasterization
 
 		glBeginTransformFeedback(GL_POINTS);
 		glDrawArrays(GL_POINTS, 0, total_points);
 		glEndTransformFeedback();
 
+		std::vector<int> temp = DEBUG::GetBufferData<int>(GL_TRANSFORM_FEEDBACK_BUFFER, X.size());
+		check_gl_error();
 		glFlush();
 		glDisable(GL_RASTERIZER_DISCARD);
 
@@ -127,6 +138,8 @@ void Cloth_GPU2::createVBO()
 	glGenBuffers(2, vboID_PrePos);
 	glGenBuffers(1, &vboIndices);
 
+	glGenBuffers(1, &tbo);
+	check_gl_error();
 	glGenBuffers(1, &vboID_Struct);
 	glGenBuffers(1, &vboID_Shear);
 	glGenBuffers(1, &vboID_Bend);
@@ -152,19 +165,27 @@ void Cloth_GPU2::createVBO()
 		glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, 0);
 
 		glBindBuffer(GL_ARRAY_BUFFER, vboID_Struct);
-		glBufferData(GL_ARRAY_BUFFER, struct_springs.size()*sizeof(glm::ivec4), &struct_springs[0].x, GL_STATIC_COPY);
+		glBufferData(GL_ARRAY_BUFFER, struct_springs.size()*sizeof(glm::ivec4), &struct_springs[0].x, GL_STATIC_READ);
 		glEnableVertexAttribArray(2);
 		glVertexAttribIPointer(2, 4, GL_INT,  0, 0);
+		check_gl_error();
 
 		glBindBuffer(GL_ARRAY_BUFFER, vboID_Shear);
-		glBufferData(GL_ARRAY_BUFFER, shear_springs.size()*sizeof(glm::ivec4), &shear_springs[0].x, GL_STATIC_COPY);
+		glBufferData(GL_ARRAY_BUFFER, shear_springs.size()*sizeof(glm::ivec4), &shear_springs[0].x, GL_STATIC_READ);
 		glEnableVertexAttribArray(3);
 		glVertexAttribIPointer(3, 4, GL_INT,  0, 0);
+		check_gl_error();
 
 		glBindBuffer(GL_ARRAY_BUFFER, vboID_Bend);
-		glBufferData(GL_ARRAY_BUFFER, bend_springs.size()*sizeof(glm::ivec4), &bend_springs[0].x, GL_STATIC_COPY);
+		glBufferData(GL_ARRAY_BUFFER, bend_springs.size()*sizeof(glm::ivec4), &bend_springs[0].x, GL_STATIC_READ);
 		glEnableVertexAttribArray(4);
 		glVertexAttribIPointer(4, 4, GL_INT, 0, 0);
+		check_gl_error();
+
+		glBindBuffer(GL_ARRAY_BUFFER, tbo);
+		glBufferData(GL_ARRAY_BUFFER, X.size()*sizeof(int), nullptr, GL_STATIC_READ);
+		glEnableVertexAttribArray(5);
+		glVertexAttribIPointer(5, 1, GL_INT, 0, 0);
 		
 	}
 
@@ -207,9 +228,10 @@ void Cloth_GPU2::setupTransformFeedback()
 {
 	glGenTransformFeedbacks(1, &tfID);
 	glBindTransformFeedback(GL_TRANSFORM_FEEDBACK, tfID);
-	const char* varying_names[] = { "out_position_mass", "out_prev_position" };
-	glTransformFeedbackVaryings(massSpringShader.getProgram(), 2, varying_names, GL_SEPARATE_ATTRIBS);
+	const char* varying_names[] = { "out_position_mass", "out_prev_position", "out_geom" };
+	glTransformFeedbackVaryings(massSpringShader.getProgram(), 3, varying_names, GL_SEPARATE_ATTRIBS);
 	glLinkProgram(massSpringShader.getProgram());
+	check_gl_error();
 }
 
 void Cloth_GPU2::setupPositions()
@@ -260,6 +282,7 @@ void Cloth_GPU2::setupIndices()
 void Cloth_GPU2::setupShaders()
 {
 	massSpringShader.LoadFromFile(GL_VERTEX_SHADER, "shaders/Spring.vp");
+	massSpringShader.LoadFromFile(GL_GEOMETRY_SHADER, "shaders/Passthrough.geom");
 	
 	particleShader.LoadFromFile(GL_VERTEX_SHADER, "shaders/Basic.vp");
 	

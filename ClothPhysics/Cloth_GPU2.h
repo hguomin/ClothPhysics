@@ -26,7 +26,7 @@ private:
 
 
 	const int width = 1024, height = 1024;
-	const int numX = 2, numY = 2;
+	const int numX = 63, numY = 63;
 	const int total_points = (numX + 1)*(numY + 1);
 	const int sizeX = 4, sizeY = 4;
 	const float hsize = sizeX / 2.0f;
@@ -65,6 +65,8 @@ private:
 	GLuint vboID_Pos[2];
 	GLuint vboID_PrePos[2];
 	GLuint vboID_Struct, vboID_Shear, vboID_Bend;
+
+	GLuint tbo;
 
 	GLuint vaoUpdateID[2], vaoRenderID[2], vboIndices;
 	

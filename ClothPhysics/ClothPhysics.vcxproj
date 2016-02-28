@@ -107,6 +107,7 @@
     <ClInclude Include="Cloth_GPU2.h" />
     <ClInclude Include="Display.h" />
     <ClInclude Include="GLError.h" />
+    <ClInclude Include="GLHelperFunctions.h" />
     <ClInclude Include="GridMesh.h" />
     <ClInclude Include="Keyboard.h" />
     <ClInclude Include="Mesh.h" />
