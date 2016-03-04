@@ -38,7 +38,7 @@ out vec3 to_gs_vertexNormal;
  
 // Resolve constraint in this space
 const vec3 center = vec3(0,0,0);
-const float radius = 1;
+const float radius = 3;
 
 void sphereCollision(inout vec3 x, vec3 center, float r)
 {
@@ -199,7 +199,7 @@ void main(void)
 	vec3 tmp = pos; 
 	pos = pos * 2.0 - pos_old + acc* dt * dt;
 	pos_old = tmp;
-
+	sphereCollision(pos,center,radius);
 	to_gs_position_mass = vec4(pos, m);	
 	to_gs_prev_position = vec4(pos_old,m);	
 	to_gs_vertexID = gl_VertexID;
