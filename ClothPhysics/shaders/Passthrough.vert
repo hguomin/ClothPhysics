@@ -1,11 +1,16 @@
-#version 400 core
-precision highp float;
+/*
+Demo code accompanying the Chapter: "Realtime Deformation using Transform Feedback" by
+Muhammad Mobeen Movania and Lin Feng. This is the shader code for passthrough vertex processing. 
 
-layout (location=0) in vec4 position_mass;	//position and mass
-uniform mat4 MVP;							//combined modelview projection matrix
+Author: Muhammad Mobeen Movania
+Last Modified: 9 September 2011.
+*/
+#version 400
 
-void main() 
+in vec4 position_mass; 
+uniform mat4 MVP;
+
+void main(void) 
 {  
-	//get the clipspace position
 	gl_Position = MVP*vec4(position_mass.xyz, 1.0);		
 }

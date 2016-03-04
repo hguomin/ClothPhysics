@@ -4,6 +4,7 @@
 #include <vector>
 #include <array>
 #include "Basic_Shader.h"
+#include "Phong_Shader.h"
 class Cloth_GPU2
 {
 public:
@@ -11,6 +12,7 @@ public:
 	~Cloth_GPU2();
 
 	void Draw(const Transform& transform,const Camera& camera );
+	
 
 private:
 	void setupPositions();
@@ -20,9 +22,14 @@ private:
 	glm::ivec2 getNextNeighbor(int n);
 	void createVBO();
 	void setupTransformFeedback();
+
+	void Simulate(glm::mat4 MVP);
+	void massSpringShader_UploadData(glm::mat4 MVP);
+
+
 	Basic_Shader massSpringShader;
-	Basic_Shader particleShader;
-	Basic_Shader renderShader;
+	Basic_Shader splitShader;
+	Phong_Shader renderShader;
 
 
 	const int width = 1024, height = 1024;
@@ -37,6 +44,7 @@ private:
 	std::vector<glm::vec4> X;		//current positions
 	std::vector<glm::vec4> X_last;	//previous positions
 	std::vector<glm::vec3> F;
+	std::vector<glm::vec2> Tex_coord;
 	std::vector<GLushort> indices;
 	std::vector<glm::ivec4> struct_springs;
 	std::vector<glm::ivec4> shear_springs;
@@ -66,14 +74,16 @@ private:
 	GLuint vboID_PrePos[2];
 	GLuint vboID_Struct, vboID_Shear, vboID_Bend;
 
-	GLuint tbo;
+	GLuint vboID_Normal;
+	GLuint vboID_TexCoord;
 
 	GLuint vaoUpdateID[2], vaoRenderID[2], vboIndices;
 	
 	GLuint texPosID[2];
 	GLuint texPrePosID[2];
 
-	GLuint tfID;
+	GLuint tfID_ForceCalc;
+	GLuint tfID_SplitCalc;
 
 	std::array<GLfloat, 4> vRed;
 	std::array<GLfloat, 4> vBeige;

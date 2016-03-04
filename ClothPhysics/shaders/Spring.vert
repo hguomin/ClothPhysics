@@ -12,9 +12,9 @@ precision highp float;
 layout( location = 0 )  in vec4 position_mass;
 layout( location = 1 )  in vec4 prev_position;
 
-layout( location = 2 )  in ivec4 spring_struct;
-layout( location = 3 )  in ivec4 spring_shear;
-layout( location = 4 )  in ivec4 spring_bend;
+layout( location = 2 )  in ivec4 spring_struct; //(right, down, left, up)
+layout( location = 3 )  in ivec4 spring_shear;  //(right down, left down, left up, right up)
+layout( location = 4 )  in ivec4 spring_bend;   //(right, down, left, up)
  
 uniform mat4 MVP;
 uniform samplerBuffer tex_position_mass;
@@ -33,62 +33,12 @@ uniform vec3 gravity;
  
 out vec4 to_gs_position_mass;
 out	vec4 to_gs_prev_position;
-out int to_gs_geom;
+out int to_gs_vertexID;
+out vec3 to_gs_vertexNormal;
  
 // Resolve constraint in this space
 const vec3 center = vec3(0,0,0);
 const float radius = 1;
-ivec2 getNextNeighbor(int n, out float ks, out float kd) { 
-   //structural springs (adjacent neighbors)
-   //        o
-   //        |
-   //     o--m--o
-   //        |
-   //        o
-   if(n<4) {
-       ks = ksStr;
-       kd = kdStr;
-   }
-	if (n == 0)	return ivec2( 1,  0);
-	if (n == 1)	return ivec2( 0, -1);
-	if (n == 2)	return ivec2(-1,  0);
-	if (n == 3)	return ivec2( 0,  1);
-	
-	//shear springs (diagonal neighbors)
-	//     o  o  o
-	//      \   /
-	//     o  m  o
-	//      /   \
-	//     o  o  o
-	if(n<8) {
-       ks = ksShr;
-       kd = kdShr;
-   }
-	if (n == 4) return ivec2( 1,  -1);
-	if (n == 5) return ivec2( -1, -1);	
-	if (n == 6) return ivec2(-1,  1);
-	if (n == 7) return ivec2( 1,  1);
-	
-	//bend spring (adjacent neighbors 1 node away)
-	//
-	//o   o   o   o   o
-	//        | 
-	//o   o   |   o   o
-	//        |   
-	//o-------m-------o
-	//        |  
-	//o   o   |   o   o
-	//        |
-	//o   o   o   o   o 
-	if(n<12) {
-       ks = ksBnd;
-       kd = kdBnd;
-   }
-	if (n == 8)	return ivec2( 2, 0);
-	if (n == 9) return ivec2( 0, -2);
-	if (n ==10) return ivec2(-2, 0);
-	if (n ==11) return ivec2( 0, 2);
-}
 
 void sphereCollision(inout vec3 x, vec3 center, float r)
 {
@@ -113,6 +63,91 @@ void sphereCollision(inout vec3 x, vec3 center, float r)
 	return springForce;
  }
  
+ vec3 getNormal(vec3 p1, vec3 p2, vec3 p3)
+ {
+	vec3 edge1 = p2-p1;
+	vec3 edge2 = p3-p1;
+	return cross(edge1, edge2);
+ }
+ /*
+ *  - - *  - - *
+ |   /  | 1 /  |
+ |  / 0 |  / 2 |
+ *  - - *  - - *
+ | 5 /  | 3 /  |
+ |  / 4 |  /   |
+ *  - - *  - - *
+ */
+ //this function assumes no holes
+ vec3 calculateNormal(vec3 p1)
+ {
+	vec3 p2;
+	vec3 p3;
+	vec3 edge1;
+	vec3 edge2;
+	vec3 normal = vec3(0,0,0);
+	//triangle 0
+	int index2 = spring_struct[1];
+	int index1 = spring_struct[2];
+	if(index1 != -1 && index2 != -1)
+	{
+		p2 = texelFetch(tex_position_mass, index1).xyz;
+		p3 = texelFetch(tex_position_mass, index2).xyz;
+		normal += getNormal(p1,p2,p3);
+	}
+	
+	//triangle 1
+	index1 = spring_struct[1];
+	index2 = spring_shear[0];
+	if(index1 != -1 && index2 != -1)
+	{
+		p2 = texelFetch(tex_position_mass, index1).xyz;
+		p3 = texelFetch(tex_position_mass, index2).xyz;
+		normal += getNormal(p1,p2,p3);
+	}
+	
+	//triangle 2
+	index1 = spring_shear[0];
+	index2 = spring_struct[0];
+	if(index1 != -1 && index2 != -1)
+	{
+		p2 = texelFetch(tex_position_mass, index1).xyz;
+		p3 = texelFetch(tex_position_mass, index2).xyz;
+		normal += getNormal(p1,p2,p3);
+	}
+	
+	//triangle 3
+	index1 = spring_struct[0];
+	index2 = spring_struct[3];
+	if(index1 != -1 && index2 != -1)
+	{
+		p2 = texelFetch(tex_position_mass, index1).xyz;
+		p3 = texelFetch(tex_position_mass, index2).xyz;
+		normal += getNormal(p1,p2,p3);
+	}
+	
+	//triangle 4
+	index1 = spring_struct[3];
+	index2 = spring_shear[2];
+	if(index1 != -1 && index2 != -1)
+	{
+		p2 = texelFetch(tex_position_mass, index1).xyz;
+		p3 = texelFetch(tex_position_mass, index2).xyz;
+		normal += getNormal(p1,p2,p3);
+	}
+	
+	//triangle 5
+	index1 = spring_shear[2];
+	index2 = spring_struct[2];
+	if(index1 != -1 && index2 != -1)
+	{
+		p2 = texelFetch(tex_position_mass, index1).xyz;
+		p3 = texelFetch(tex_position_mass, index2).xyz;
+		normal += getNormal(p1,p2,p3);
+	}
+	return normalize(normal);
+}
+  
 void main(void) 
 {  
 	float m = position_mass.w;
@@ -167,6 +202,7 @@ void main(void)
 
 	to_gs_position_mass = vec4(pos, m);	
 	to_gs_prev_position = vec4(pos_old,m);	
-	to_gs_geom = gl_VertexID;
+	to_gs_vertexID = gl_VertexID;
+	to_gs_vertexNormal = calculateNormal(pos);
 	gl_Position = MVP*vec4(pos, 1);
 }

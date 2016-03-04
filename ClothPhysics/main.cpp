@@ -58,11 +58,11 @@ int main(int argc, char ** argv[])
 	Transform transform;
 	Keyboard keyboard;
 	Mouse mouse;
-
+	check_gl_error();
 	Cloth2 cloth(8, 8, 75, 75);
-	Cloth_GPU gpuCloth;
+	//Cloth_GPU gpuCloth;
 	Cloth_GPU2 cloth2;
-	
+	check_gl_error();
 
 	float counter = 0.0f;
 	Mesh monkey("./models/monkey3.obj");
@@ -75,7 +75,7 @@ int main(int argc, char ** argv[])
 	unsigned int iterations = 3;
 
 	TwBar *myBar;
-	
+	check_gl_error();
 	myBar = TwNewBar("Hello!");
 	
 	TwAddVarRW(myBar, "Wind X", TW_TYPE_FLOAT, &windX, NULL);
@@ -93,7 +93,7 @@ int main(int argc, char ** argv[])
 	SDL_Event sdl_event;
 	int handled;
 	
-	
+	check_gl_error();
 	
 	while (!display.IsClosed())
 	{
@@ -188,7 +188,7 @@ int main(int argc, char ** argv[])
 			cloth.CalculatePerVertexNormals();
 			cloth.UpdateTextureCoordinates();
 		}
-		if (currentKeyStates[SDL_SCANCODE_V])
+		if (currentKeyStates[SDL_SCANCODE_B])
 		{
 			GPU = !GPU;
 		}
@@ -220,13 +220,16 @@ int main(int argc, char ** argv[])
 				physicSteps++;
 			}
 			//cloth.Update(0.01f, wind, iterations);
+
 			cloth.Draw();
 		}
 		else
 		{
 			camera.SetSpeed(0.5f);
 			//gpuCloth.Draw(transform, camera);
+			check_gl_error();
 			cloth2.Draw(transform, camera);
+			check_gl_error();
 		}
 		TwDraw();
 		display.Update();
