@@ -37,8 +37,8 @@ out int to_gs_vertexID;
 out vec3 to_gs_vertexNormal;
  
 // Resolve constraint in this space
-const vec3 center = vec3(0,0,0);
-const float radius = 3;
+uniform vec3 ball_position;
+uniform float radius;
 
 void sphereCollision(inout vec3 x, vec3 center, float r)
 {
@@ -87,8 +87,8 @@ void sphereCollision(inout vec3 x, vec3 center, float r)
 	vec3 edge2;
 	vec3 normal = vec3(0,0,0);
 	//triangle 0
-	int index2 = spring_struct[1];
-	int index1 = spring_struct[2];
+	int index2 = spring_struct[1]; //above
+	int index1 = spring_struct[2]; //left
 	if(index1 != -1 && index2 != -1)
 	{
 		p2 = texelFetch(tex_position_mass, index1).xyz;
@@ -97,8 +97,8 @@ void sphereCollision(inout vec3 x, vec3 center, float r)
 	}
 	
 	//triangle 1
-	index1 = spring_struct[1];
-	index2 = spring_shear[0];
+	index1 = spring_struct[1]; //above
+	index2 = spring_shear[0];  //top right
 	if(index1 != -1 && index2 != -1)
 	{
 		p2 = texelFetch(tex_position_mass, index1).xyz;
@@ -107,8 +107,8 @@ void sphereCollision(inout vec3 x, vec3 center, float r)
 	}
 	
 	//triangle 2
-	index1 = spring_shear[0];
-	index2 = spring_struct[0];
+	index1 = spring_shear[0]; //top right
+	index2 = spring_struct[0]; //right
 	if(index1 != -1 && index2 != -1)
 	{
 		p2 = texelFetch(tex_position_mass, index1).xyz;
@@ -117,8 +117,8 @@ void sphereCollision(inout vec3 x, vec3 center, float r)
 	}
 	
 	//triangle 3
-	index1 = spring_struct[0];
-	index2 = spring_struct[3];
+	index1 = spring_struct[0]; //right
+	index2 = spring_struct[3]; //bottom
 	if(index1 != -1 && index2 != -1)
 	{
 		p2 = texelFetch(tex_position_mass, index1).xyz;
@@ -127,8 +127,8 @@ void sphereCollision(inout vec3 x, vec3 center, float r)
 	}
 	
 	//triangle 4
-	index1 = spring_struct[3];
-	index2 = spring_shear[2];
+	index1 = spring_struct[3]; //bottom
+	index2 = spring_shear[2]; //bottom left
 	if(index1 != -1 && index2 != -1)
 	{
 		p2 = texelFetch(tex_position_mass, index1).xyz;
@@ -137,8 +137,8 @@ void sphereCollision(inout vec3 x, vec3 center, float r)
 	}
 	
 	//triangle 5
-	index1 = spring_shear[2];
-	index2 = spring_struct[2];
+	index1 = spring_shear[2]; //bottom left
+	index2 = spring_struct[2]; //left
 	if(index1 != -1 && index2 != -1)
 	{
 		p2 = texelFetch(tex_position_mass, index1).xyz;
@@ -191,6 +191,7 @@ void main(void)
 			F+= calcSpringForce(pos,pos_old,vel,p2,p2_last,rest_bend,ksBnd,kdBnd);
 		}
 	}
+	sphereCollision(pos,ball_position,radius);
     vec3 acc = vec3(0);
 	if(m!=0)
 	   acc = F/m; 
@@ -199,7 +200,6 @@ void main(void)
 	vec3 tmp = pos; 
 	pos = pos * 2.0 - pos_old + acc* dt * dt;
 	pos_old = tmp;
-	sphereCollision(pos,center,radius);
 	to_gs_position_mass = vec4(pos, m);	
 	to_gs_prev_position = vec4(pos_old,m);	
 	to_gs_vertexID = gl_VertexID;

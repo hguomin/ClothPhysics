@@ -1,3 +1,4 @@
+#define GLM_FORCE_RADIANS
 #include <Windows.h>
 #include <GL\glew.h>
 #include <GL\freeglut.h>
@@ -230,6 +231,7 @@ int main(int argc, char ** argv[])
 			check_gl_error();
 			cloth2.Draw(transform, camera);
 			check_gl_error();
+			cloth2.Split(4, glm::vec3(0,0,-1));
 		}
 		TwDraw();
 		display.Update();

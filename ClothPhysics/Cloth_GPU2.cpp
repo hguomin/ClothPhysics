@@ -71,6 +71,209 @@ void Cloth_GPU2::Draw(const Transform& transform, const Camera& camera)
 	//CHECK_GL_ERRORS
 }
 
+//assuming split_index is in range
+void Cloth_GPU2::Split(const unsigned int split_index, glm::vec3 planeNormal)
+{
+	//collecting data from GPU
+	glBindVertexArray(vaoUpdateID[writeID]);
+	glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, vboID_Pos[readID]); //current position
+	X = DEBUG::GetBufferData<glm::vec4>(GL_TRANSFORM_FEEDBACK_BUFFER, X.size());
+	glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 1, vboID_PrePos[readID]); //last position
+	X_last = DEBUG::GetBufferData<glm::vec4>(GL_TRANSFORM_FEEDBACK_BUFFER, X_last.size());
+	
+	//I am assuming springdata does not change on the GPU so no need to collect that
+	//using the spring connections as information about what triangles to draw
+	int index_up = struct_springs[split_index][UP];
+	int index_down = struct_springs[split_index][DOWN];
+	int index_left = struct_springs[split_index][LEFT];
+	int index_right = struct_springs[split_index][RIGHT];
+	int index_upLeft = shear_springs[split_index][UP_LEFT];
+	int index_upRight = shear_springs[split_index][UP_RIGHT];
+	int index_downLeft = shear_springs[split_index][DOWN_LEFT];
+	int index_downRight = shear_springs[split_index][DOWN_RIGHT];
+
+	//calculate the triangle centers
+	/*
+	*  - - *  - - *
+	|   /  | 1 /  |
+	|  / 0 |  / 2 |
+	*  - - *  - - *
+	| 5 /  | 3 /  |
+	|  / 4 |  /   |
+	*  - - *  - - *
+	*/
+	triangle_t tri0;
+	triangle_t tri1;
+	triangle_t tri2;
+	triangle_t tri3;
+	triangle_t tri4;
+	triangle_t tri5;
+	std::vector<triangle_t> triangles;
+	glm::vec3 p1 = glm::vec3(X[split_index]);
+	//Populate triangle 0
+	tri0.ID = 0;
+	populateTriangle(tri0, p1, index_left, index_up);
+	triangles.push_back(tri0);
+	//Populate triangle 1
+	tri1.ID = 1;
+	populateTriangle(tri1, p1, index_up, index_upRight);
+	triangles.push_back(tri1);
+	//Populate triangle 2
+	tri2.ID = 2;
+	populateTriangle(tri2, p1, index_upRight, index_right);
+	triangles.push_back(tri2);
+	//Populate triangle 3
+	tri3.ID = 3;
+	populateTriangle(tri3, p1, index_right, index_down);
+	triangles.push_back(tri3);
+	//Populate triangle 4
+	tri4.ID = 4;
+	populateTriangle(tri4, p1, index_down,index_downLeft);
+	triangles.push_back(tri4);
+	//Populate triangle 5
+	tri5.ID = 5;
+	populateTriangle(tri5, p1, index_downLeft,index_left);
+	triangles.push_back(tri5);
+
+	bool oneAbove = false;
+	bool oneBelow = false;
+	//need both one triangle above the cutt point as well as one below to be able to split
+	for each (triangle_t tri in triangles)
+	{
+		if (tri.exists)
+		{
+			if (isPointAbovePlane(tri.center,p1, planeNormal))
+			{
+				oneAbove = true;
+			}
+			else
+			{
+				oneBelow = true;
+			}
+		}
+	}
+	if (oneAbove && oneBelow)
+	{
+		//so we are going to do a cut. Better changing the mass for the point we are cutting
+		glm::vec4 split_pos = X[split_index];
+		glm::vec4 prev_split_pos = X_last[split_index];
+		split_pos.w = split_pos.w / 2;
+		prev_split_pos.w = prev_split_pos.w / 2;
+		X[split_index] = split_pos;
+		int new_index = X.size();
+		X.push_back(split_pos);
+		X_last.push_back(prev_split_pos);
+		glm::ivec4 before_split_index_struct = struct_springs[split_index];
+		glm::ivec4 after_split_index_struct(-1);
+		glm::ivec4 before_split_new_stuct(-1);
+		glm::ivec4 after_split_new_struct(-1);
+		glm::vec4 split_bend_spring(-1);
+		glm::vec4 split_shear_spring(-1);
+		//Remapping the springs for the CUT particle
+		for (unsigned int i = 0; i < 4; i++)
+		{
+			if (before_split_index_struct[i] != -1)
+			{
+				//get the position of the connected point
+				glm::vec3 pos = glm::vec3(X[before_split_index_struct[i]]);
+				bool above = isPointAbovePlane(pos, p1, planeNormal);
+				if (!above) //if the point is below the plane
+				{
+					//fixes the "old" vertex
+					after_split_index_struct = before_split_index_struct;
+					after_split_index_struct[i] = -1;
+					//now we relink the companion spring below the cutting plane to the "new" vertex
+					//first get the companion spring
+					glm::ivec4 companionSpring = struct_springs[before_split_index_struct[i]];
+					//find the index in the companion spring that is pointing towards the "old" vertex
+					//and point it towards the "new" one
+					//a bad way of finding but easy to do.
+					for (int j = 0; j < 4; j++)
+					{
+						if (companionSpring[j] == split_index)
+						{
+							companionSpring[j] = new_index;
+						}
+					}
+					//save back the companionSpring
+					struct_springs[before_split_index_struct[i]] = companionSpring;
+					//save back the after_index springs
+					struct_springs[split_index] = after_split_index_struct;
+					//now lets fix the newly created spring index
+					//it is a copy of the original spring data, but remove the inverse if companion index
+					after_split_new_struct = before_split_index_struct;
+					switch (i)
+					{
+					case(UP) :
+						after_split_new_struct[DOWN] = -1;
+						break;
+					case(DOWN) :
+						after_split_new_struct[UP] = -1;
+						break;
+					case(LEFT) :
+						after_split_new_struct[RIGHT] = -1;
+						break;
+					case(RIGHT) :
+						after_split_new_struct[LEFT] = -1;
+						break;
+					default:
+						break;
+					}
+					//pushback the new spring data for the new vertex
+					struct_springs.push_back(after_split_new_struct);
+				}
+			}
+		}
+	}
+	index_down;
+}
+
+void Cloth_GPU2::delinkSpring(glm::ivec4& start, glm::ivec4& end)
+{
+	//quick and dirty
+	for (int i = 0; i < 4; i++)
+	{
+		for (int j = 0; j < 4; j++)
+		{
+			if (start[i] == end[j])
+			{
+
+			}
+		}
+	}
+}
+
+void Cloth_GPU2::populateTriangle(triangle_t& tri,glm::vec3 p1, int index2, int index3)
+{
+	
+	if (index2 != - 1 && index3 != -1) //does it even exist
+	{
+		tri.exists = true;
+		tri.p2_index = index2;
+		tri.p3_index = index3;
+		tri.p2 = glm::vec3(X[index2]);
+		tri.p3 = glm::vec3(X[index3]);
+		tri.center = glm::vec3((p1 + tri.p2 + tri.p3)*0.333333f); //divide by 3 to get average
+	}
+	else
+	{
+		tri.exists = false;
+	}
+}
+
+bool Cloth_GPU2::isPointAbovePlane(glm::vec3 p1, glm::vec3 pointOnPlane, glm::vec3 planeNormal)
+{
+	float cosTheta = glm::dot(p1-pointOnPlane, planeNormal);
+	if (cosTheta >= 0)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
 void Cloth_GPU2::createVBO()
 {
 	
@@ -246,7 +449,7 @@ void Cloth_GPU2::Simulate(glm::mat4 MVP)
 		check_gl_error();
 		
 		//get data from the buffers
-		std::vector<glm::vec3> temp = DEBUG::GetBufferData<glm::vec3>(GL_TRANSFORM_FEEDBACK_BUFFER, X.size());
+		//std::vector<glm::vec3> temp = DEBUG::GetBufferData<glm::vec3>(GL_TRANSFORM_FEEDBACK_BUFFER, X.size());
 		//glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, vboID_Pos[readID]);
 		//std::vector<glm::vec4> temp2 = DEBUG::GetBufferData<glm::vec4>(GL_TRANSFORM_FEEDBACK_BUFFER, 3 * X.size());
 		
@@ -257,6 +460,8 @@ void Cloth_GPU2::Simulate(glm::mat4 MVP)
 		std::swap(readID, writeID); //switch write and read
 	}
 	massSpringShader.UnUse();
+	//extract data to CPU for ease of use in split (maybe should be in split)
+	//X = DEBUG::GetBufferData<glm::vec4>(GL_TRANSFORM_FEEDBACK_BUFFER, X.size());
 }
 
 void Cloth_GPU2::massSpringShader_UploadData(glm::mat4 MVP)
@@ -264,18 +469,22 @@ void Cloth_GPU2::massSpringShader_UploadData(glm::mat4 MVP)
 	glUniformMatrix4fv(massSpringShader("MVP"), 1, GL_FALSE, glm::value_ptr(MVP));
 	glUniform1f(massSpringShader("dt"), timeStep);
 	glUniform3fv(massSpringShader("gravity"), 1, &gravity.x);
-	glUniform1f(massSpringShader("ksStr"), KsStruct);
-	glUniform1f(massSpringShader("ksShr"), KsShear);
-	glUniform1f(massSpringShader("ksBnd"), KsBend);
-	glUniform1f(massSpringShader("kdStr"), KdStruct / 1000.0f);
-	glUniform1f(massSpringShader("kdShr"), KdShear / 1000.0f);
-	glUniform1f(massSpringShader("kdBnd"), KdBend / 1000.0f);
+	glUniform1f(massSpringShader("ksStr"), springData.KsStruct);
+	glUniform1f(massSpringShader("ksShr"), springData.KsShear);
+	glUniform1f(massSpringShader("ksBnd"), springData.KsBend);
+	glUniform1f(massSpringShader("kdStr"), springData.KdStruct / 1000.0f);
+	glUniform1f(massSpringShader("kdShr"), springData.KdShear / 1000.0f);
+	glUniform1f(massSpringShader("kdBnd"), springData.KdBend / 1000.0f);
 	glUniform1f(massSpringShader("DEFAULT_DAMPING"), DEFAULT_DAMPING);
 	glUniform1i(massSpringShader("texsize_x"), texture_size_x);
 	glUniform1i(massSpringShader("texsize_y"), texture_size_y);
-	glUniform1f(massSpringShader("rest_struct"), rest_struct);
-	glUniform1f(massSpringShader("rest_shear"), rest_shear);
-	glUniform1f(massSpringShader("rest_bend"), rest_bend);
+	glUniform1f(massSpringShader("rest_struct"), springData.rest_struct);
+	glUniform1f(massSpringShader("rest_shear"), springData.rest_shear);
+	glUniform1f(massSpringShader("rest_bend"), springData.rest_bend);
+	glUniform1f(massSpringShader("radius"), 3.0f);
+	glm::vec3 ball_pos(0);
+	glUniform3fv(massSpringShader("ball_position"),1, glm::value_ptr(ball_pos));
+	check_gl_error();
 
 	glUniform2f(massSpringShader("inv_cloth_size"), inv_cloth_size.x, inv_cloth_size.y);
 	glUniform2f(massSpringShader("step"), 1.0f / (texture_size_x - 1.0f), 1.0f / (texture_size_y - 1.0f));
@@ -334,12 +543,7 @@ void Cloth_GPU2::setupShaders()
 	massSpringShader.LoadFromFile(GL_VERTEX_SHADER, "shaders/Spring.vert");
 	massSpringShader.LoadFromFile(GL_GEOMETRY_SHADER, "shaders/Spring.geom");
 	
-	//splitShader.LoadFromFile(GL_VERTEX_SHADER, "shaders/Calculation/Basic.vp");
-	//splitShader.LoadFromFile(GL_FRAGMENT_SHADER, "shaders/Calculation/Split.geom");
-	check_gl_error();
-	//renderShader.LoadFromFile(GL_VERTEX_SHADER, "shaders/Passthrough.vp");
-	check_gl_error();
-	//renderShader.LoadFromFile(GL_FRAGMENT_SHADER, "shaders/Passthrough.fp");
+	splitShader.LoadFromFile(GL_VERTEX_SHADER, "shaders/Split.vert");
 	check_gl_error();
 	massSpringShader.CreateAndLinkProgram();
 	
@@ -371,7 +575,8 @@ void Cloth_GPU2::setupShaders()
 	massSpringShader.AddUniform("rest_struct");
 	massSpringShader.AddUniform("rest_shear");
 	massSpringShader.AddUniform("rest_bend");
-	massSpringShader.AddUniform("ellipsoid");
+	massSpringShader.AddUniform("radius");
+	massSpringShader.AddUniform("ball_position");
 
 	glUniform1i(massSpringShader("tex_position_mass"), 0);
 	
@@ -379,19 +584,8 @@ void Cloth_GPU2::setupShaders()
 	
 
 	massSpringShader.UnUse();
-	/*
-	check_gl_error();
-	renderShader.CreateAndLinkProgram();
-	check_gl_error();
-	renderShader.Use();
-	check_gl_error();
-	renderShader.AddAttribute("position_mass");
-	renderShader.AddUniform("MVP");
-	renderShader.AddUniform("vColor");
-	glUniform4fv(renderShader("vColor"), 1, &vGray[0]);
-	renderShader.UnUse();
-	check_gl_error();
-	*/
+	
+
 }
 
 void Cloth_GPU2::setupSprings()
@@ -435,9 +629,19 @@ void Cloth_GPU2::setupSprings()
 			bend_springs.push_back(temp);
 		}
 	}
-	rest_struct = glm::length(glm::vec2(0, 1)*inv_cloth_size);
-	rest_shear = glm::length(glm::vec2(1, 1)*inv_cloth_size);
-	rest_bend = glm::length(glm::vec2(0, 2)*inv_cloth_size);
+	springData.rest_struct = glm::length(glm::vec2(0, 1)*inv_cloth_size);
+	springData.rest_shear = glm::length(glm::vec2(1, 1)*inv_cloth_size);
+	springData.rest_bend = glm::length(glm::vec2(0, 2)*inv_cloth_size);
+	float springConstant = 50.75f;
+	float springDamp = -0.25f;
+	springData.KsStruct = springConstant;
+	springData.KdStruct = springDamp;
+
+	springData.KsShear= springConstant;
+	springData.KdShear= springDamp;
+
+	springData.KsBend= springConstant;
+	springData.KdBend= springDamp;
 }
 
 glm::ivec2 Cloth_GPU2::getNextNeighbor(int n) {

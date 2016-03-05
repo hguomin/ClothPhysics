@@ -13,7 +13,7 @@ public:
 
 	void Draw(const Transform& transform,const Camera& camera );
 	
-
+	void Split(unsigned int index, glm::vec3 planeNormal);
 private:
 	void setupPositions();
 	void setupIndices();
@@ -31,9 +31,20 @@ private:
 	Basic_Shader splitShader;
 	Phong_Shader renderShader;
 
+	enum
+	{
+		RIGHT = 0,
+		UP = 1,
+		LEFT = 2,
+		DOWN = 3,
+		UP_RIGHT = 0,
+		UP_LEFT = 1,
+		DOWN_LEFT = 2,
+		DOWN_RIGHT = 3,
+	};
 
 	const int width = 1024, height = 1024;
-	const int numX = 63, numY = 63;
+	const int numX = 2, numY = 2;
 	const int total_points = (numX + 1)*(numY + 1);
 	const int sizeX = 4, sizeY = 4;
 	const float hsize = sizeX / 2.0f;
@@ -50,16 +61,19 @@ private:
 	std::vector<glm::ivec4> shear_springs;
 	std::vector<glm::ivec4> bend_springs;
 
-	const float DEFAULT_DAMPING = -0.0125f;
-	float	KsStruct = 50.75f, KdStruct = -0.25f;
-	float	KsShear = 50.75f, KdShear = -0.25f;
-	float	KsBend = 50.95f, KdBend = -0.25f;
-	glm::vec3 gravity = glm::vec3(0.0f, -0.00981f, 0.0f);
 	glm::vec2 inv_cloth_size = glm::vec2(float(sizeX) / numX, float(sizeY) / numY);
+	glm::vec3 gravity = glm::vec3(0.0f, -0.00981f, 0.0f);
 	float mass = 1.0f;
-	float rest_struct;
-	float rest_shear;
-	float rest_bend;
+	const float DEFAULT_DAMPING = -0.0125f;
+	struct springData_t
+	{
+		float	KsStruct, KdStruct;
+		float	KsShear, KdShear;
+		float	KsBend, KdBend;
+		float rest_struct;
+		float rest_shear;
+		float rest_bend;
+	} springData;
 
 	float timeStep = 1.0f / 60.0f;
 
@@ -89,5 +103,22 @@ private:
 	std::array<GLfloat, 4> vBeige;
 	std::array<GLfloat, 4> vWhite;
 	std::array<GLfloat, 4> vGray;
+
+	struct triangle_t
+	{
+		int ID;
+		glm::vec3 p2;
+		glm::vec3 p3;
+		glm::vec3 center;
+		int p2_index;
+		int p3_index;
+		bool above;
+		bool exists;
+	};
+
+	void populateTriangle(triangle_t& tri, glm::vec3 p1, int index2, int index3);
+	bool isPointAbovePlane(glm::vec3 p1, glm::vec3 pointOnPlane, glm::vec3 planeNormal);
+	void delinkSpring(glm::ivec4& start, glm::ivec4& end);
+	
 };
 
