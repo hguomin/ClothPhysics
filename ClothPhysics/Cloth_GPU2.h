@@ -118,8 +118,15 @@ private:
 
 	void populateTriangle(triangle_t& tri, glm::vec3 p1, int index2, int index3);
 	bool isPointAbovePlane(glm::vec3 p1, glm::vec3 pointOnPlane, glm::vec3 planeNormal);
+	enum SPRING
+	{
+		STRUCT,
+		SHEAR,
+		BEND
+	};
+	void FixSprings(std::vector<glm::ivec4>& springs, glm::ivec4& new_spring, glm::vec3 p1, glm::vec3 planeNormal, int index, int new_index, int direction, SPRING springType);
 
-	void FixSprings(std::vector<glm::ivec4>& springs, glm::ivec4& new_spring, glm::vec3 p1, glm::vec3 planeNormal, int index, int new_index, int xyz);
-	
+	std::vector<GLushort> calculateIndices();
+
 };
 

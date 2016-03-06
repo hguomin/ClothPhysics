@@ -231,6 +231,7 @@ int main(int argc, char ** argv[])
 			check_gl_error();
 			cloth2.Draw(transform, camera);
 			check_gl_error();
+			//Current bug. Splitting diagonaly should destroy shearing springs.Not at the moment
 			cloth2.Split(4, glm::vec3(0,0,-1));
 		}
 		TwDraw();

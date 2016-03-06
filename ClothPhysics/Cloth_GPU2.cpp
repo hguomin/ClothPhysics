@@ -164,110 +164,64 @@ void Cloth_GPU2::Split(const unsigned int split_index, glm::vec3 planeNormal)
 		X.push_back(split_pos);
 		X_last.push_back(prev_split_pos);
 		//for struct spring calculation
-		glm::ivec4 before_split_index_struct = struct_springs[split_index];
-		glm::ivec4 after_split_index_struct(-1);
-		glm::ivec4 before_split_new_stuct(-1);
-		glm::ivec4 after_split_new_struct(-1);
-
+		
 		//for shear spring calculation
-		glm::ivec4 new_shear = shear_springs[split_index];
+		glm::ivec4 new_shear(-1);
 		glm::ivec4 new_struct = struct_springs[split_index];
+		glm::ivec4 new_bend = bend_springs[split_index];
 		//Remapping the springs for the CUT particle
 		for (unsigned int i = 0; i < 4; i++)
 		{
-			/*
-			if (before_split_index_struct[i] != -1)
-			{
-				//get the position of the connected point
-				glm::vec3 pos = glm::vec3(X[before_split_index_struct[i]]);
-				bool above = isPointAbovePlane(pos, p1, planeNormal);
-				if (!above) //if the point is below the plane
-				{
-					//fixes the "old" vertex
-					after_split_index_struct = before_split_index_struct;
-					after_split_index_struct[i] = -1;
-					//now we relink the companion spring below the cutting plane to the "new" vertex
-					//first get the companion spring
-					glm::ivec4 companionSpring = struct_springs[before_split_index_struct[i]];
-					//find the index in the companion spring that is pointing towards the "old" vertex
-					//and point it towards the "new" one
-					//a bad way of finding but easy to do.
-					for (int j = 0; j < 4; j++)
-					{
-						if (companionSpring[j] == split_index)
-						{
-							companionSpring[j] = new_index;
-						}
-					}
-					//save back the companionSpring
-					struct_springs[before_split_index_struct[i]] = companionSpring;
-					//save back the after_index springs
-					struct_springs[split_index] = after_split_index_struct;
-					//now lets fix the newly created spring index
-					//it is a copy of the original spring data, but remove the inverse if companion index
-					after_split_new_struct = before_split_index_struct;
-					switch (i)
-					{
-					case(UP) :
-						after_split_new_struct[DOWN] = -1;
-						break;
-					case(DOWN) :
-						after_split_new_struct[UP] = -1;
-						break;
-					case(LEFT) :
-						after_split_new_struct[RIGHT] = -1;
-						break;
-					case(RIGHT) :
-						after_split_new_struct[LEFT] = -1;
-						break;
-					default:
-						break;
-					}
-					//pushback the new spring data for the new vertex
-					struct_springs.push_back(after_split_new_struct);
-				}
-			}
-			*/
-			FixSprings(struct_springs, new_struct, p1, planeNormal, split_index, new_index, i);
+			
+			FixSprings(struct_springs, new_struct, p1, planeNormal, split_index, new_index, i, SPRING::STRUCT);
 			//check for shear spring
-			FixSprings(shear_springs, new_shear, p1, planeNormal, split_index, new_index, i);
-			/*
-			if (shear_springs[split_index][i] != -1)
-			{
-				glm::vec3 pos = glm::vec3(X[shear_springs[split_index][i]]);
-				bool above = isPointAbovePlane(pos, p1, planeNormal);
-				if (!above) //if the point is below the plane
-				{
-					int temp = shear_springs[split_index][i];
-					shear_springs[split_index][i] = -1; //remove link to below
-					for (int j = 0; j < 4; j++)
-					{
-						if (shear_springs[temp][j] == split_index)
-						{
-							shear_springs[temp][j] = new_index;
-						}
-					}
-					new_shear[i] = temp;
-				}
-			}
-			*/
+			FixSprings(shear_springs, new_shear, p1, planeNormal, split_index, new_index, i, SPRING::SHEAR);
+			FixSprings(bend_springs, new_bend, p1, planeNormal, split_index, new_index, i, SPRING::BEND);
+			
 		}
 		shear_springs.push_back(new_shear);
 		struct_springs.push_back(new_struct);
+		bend_springs.push_back(new_bend);
 	}
-	index_down;
+	std::vector<GLushort> newIndices = calculateIndices();
+	indices = newIndices;
 }
 
-void Cloth_GPU2::FixSprings(std::vector<glm::ivec4>& springs, glm::ivec4& new_spring, glm::vec3 p1, glm::vec3 planeNormal, int index, int new_index, int xyz)
+std::vector<GLushort> Cloth_GPU2::calculateIndices()
 {
-	if (springs[index][xyz] != -1)
+	std::vector<GLushort> ret;
+	for (unsigned int i = 0; i < X.size(); i++)
 	{
-		glm::vec3 pos = glm::vec3(X[springs[index][xyz]]);
+		int index = i;
+		int down = struct_springs[index][DOWN];
+		int right = struct_springs[index][RIGHT];
+		int downRight = shear_springs[index][DOWN_RIGHT];
+		if (down != -1 && right != -1)
+		{
+			ret.push_back(index);
+			ret.push_back(down);
+			ret.push_back(right);
+		}
+		if (right != -1 && downRight != -1)
+		{
+			ret.push_back(right);
+			ret.push_back(down);
+			ret.push_back(downRight);
+		}
+	}
+	return ret;
+}
+
+void Cloth_GPU2::FixSprings(std::vector<glm::ivec4>& springs, glm::ivec4& new_spring, glm::vec3 p1, glm::vec3 planeNormal, int index, int new_index, int direction, SPRING springType)
+{
+	if (springs[index][direction] != -1)
+	{
+		glm::vec3 pos = glm::vec3(X[springs[index][direction]]);
 		bool above = isPointAbovePlane(pos, p1, planeNormal);
 		if (!above) //if the point is below the plane
 		{
-			int temp = springs[index][xyz];
-			springs[index][xyz] = -1; //remove link to below
+			int temp = springs[index][direction];
+			springs[index][direction] = -1; //remove link to below plane
 			for (int j = 0; j < 4; j++)
 			{
 				if (springs[temp][j] == index)
@@ -275,23 +229,33 @@ void Cloth_GPU2::FixSprings(std::vector<glm::ivec4>& springs, glm::ivec4& new_sp
 					springs[temp][j] = new_index;
 				}
 			}
-			new_spring[xyz] = temp;
-			switch (xyz)
+			new_spring[direction] = temp;
+			//remap so that we don't use the opposite
+			int reverse_dir;
+			switch (direction) //shear springs use the same winding, so the opposite is at the same position as for a struct/bend string
 			{
 			case(UP) :
-				new_spring[DOWN] = -1;
+				reverse_dir = DOWN;
 				break;
 			case(DOWN) :
-				new_spring[UP] = -1;
+				reverse_dir = UP;
 				break;
 			case(LEFT) :
-				new_spring[RIGHT] = -1;
+				reverse_dir = RIGHT;
 				break;
 			case(RIGHT) :
-				new_spring[LEFT] = -1;
+				reverse_dir = LEFT;
 				break;
 			default:
 				break;
+			}
+			new_spring[reverse_dir] = -1;
+			//if we are in a struct, lets also remove the cut bend because we have the data ready
+			if (springType == SPRING::STRUCT)
+			{
+				int bend_above = bend_springs[temp][reverse_dir];
+				bend_springs[temp][reverse_dir] = -1;
+				bend_springs[bend_above][direction] = -1;
 			}
 		}
 	}
