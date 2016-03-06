@@ -191,7 +191,7 @@ void main(void)
 			F+= calcSpringForce(pos,pos_old,vel,p2,p2_last,rest_bend,ksBnd,kdBnd);
 		}
 	}
-	sphereCollision(pos,ball_position,radius);
+	//sphereCollision(pos,ball_position,radius);
     vec3 acc = vec3(0);
 	if(m!=0)
 	   acc = F/m; 

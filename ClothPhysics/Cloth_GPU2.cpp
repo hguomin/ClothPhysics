@@ -58,12 +58,19 @@ void Cloth_GPU2::Draw(const Transform& transform, const Camera& camera)
 	//CHECK_GL_ERRORS;
 	check_gl_error();
 	glBindVertexArray(vaoRenderID[writeID]);
-	glDisable(GL_DEPTH_TEST);
+	
+	glDisable(GL_CULL_FACE);
 	renderShader.Use();
 	check_gl_error();
 	renderShader.UpdateValues(transform, camera);
 	check_gl_error();
-	//glUniformMatrix4fv(renderShader("MVP"), 1, GL_FALSE, glm::value_ptr(mMVP));
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vboIndices);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size()*sizeof(GLushort), &indices[0], GL_DYNAMIC_COPY);
+	std::vector<GLushort> tmp = DEBUG::GetBufferData<GLushort>(GL_ELEMENT_ARRAY_BUFFER, indices.size());
+	glBindBuffer(GL_ARRAY_BUFFER, vboID_TexCoord);
+	glBufferData(GL_ARRAY_BUFFER, Tex_coord.size()*sizeof(glm::vec2), &Tex_coord[0], GL_DYNAMIC_COPY);
+
 	glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_SHORT, 0);
 	renderShader.UnUse();
 	glEnable(GL_DEPTH_TEST);
@@ -135,12 +142,15 @@ void Cloth_GPU2::Split(const unsigned int split_index, glm::vec3 planeNormal)
 		//so we are going to do a cut. Better changing the mass for the point we are cutting
 		glm::vec4 split_pos = X[split_index];
 		glm::vec4 prev_split_pos = X_last[split_index];
+		glm::vec2 tex = Tex_coord[split_index];
 		split_pos.w = split_pos.w / 2;
 		prev_split_pos.w = prev_split_pos.w / 2;
 		X[split_index] = split_pos;
+		X_last[split_index] = prev_split_pos;
 		int new_index = X.size();
 		X.push_back(split_pos);
 		X_last.push_back(prev_split_pos);
+		Tex_coord.push_back(tex);
 		//for struct spring calculation
 		
 		//for shear spring calculation
@@ -187,6 +197,7 @@ void Cloth_GPU2::Split(const unsigned int split_index, glm::vec3 planeNormal)
 	}
 	std::vector<GLushort> newIndices = calculateIndices(mesh);
 	indices = newIndices;
+	total_points++;
 }
 
 std::vector<GLushort> Cloth_GPU2::calculateIndices(trimesh::trimesh_t halfedge_mesh)
@@ -306,7 +317,7 @@ void Cloth_GPU2::createVBO()
 	{
 		glBindVertexArray(vaoUpdateID[i]);
 		glBindBuffer(GL_ARRAY_BUFFER, vboID_Pos[i]);
-		glBufferData(GL_ARRAY_BUFFER, X.size()*sizeof(glm::vec4), &X[0].x, GL_DYNAMIC_COPY);
+		glBufferData(GL_ARRAY_BUFFER, 3*X.size()*sizeof(glm::vec4), &X[0].x, GL_DYNAMIC_COPY);
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
 		
@@ -335,7 +346,7 @@ void Cloth_GPU2::createVBO()
 		check_gl_error();
 
 		glBindBuffer(GL_ARRAY_BUFFER, vboID_Normal);
-		glBufferData(GL_ARRAY_BUFFER, X.size()*sizeof(glm::vec3), nullptr, GL_STATIC_READ);
+		glBufferData(GL_ARRAY_BUFFER, 3*X.size()*sizeof(glm::vec3), nullptr, GL_STATIC_READ);
 		glEnableVertexAttribArray(5);
 		glVertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, 0, 0);
 		
@@ -417,17 +428,43 @@ void Cloth_GPU2::Simulate(glm::mat4 MVP)
 {
 	massSpringShader.Use();
 	massSpringShader_UploadData(MVP);
-	
+	//Syncronize the buffer data. We might have had a cut
+	for (int i = 0; i < 2; i++)
+	{
+		glBindVertexArray(vaoUpdateID[i]);
+		glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, vboID_Pos[i]); //current position
+		glBufferData(GL_TRANSFORM_FEEDBACK_BUFFER, X.size()*sizeof(glm::vec4), &X[0].x, GL_DYNAMIC_COPY);
+
+		glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 1, vboID_PrePos[i]); //last position
+		glBufferData(GL_TRANSFORM_FEEDBACK_BUFFER, X_last.size()*sizeof(glm::vec4), &X_last[0].x, GL_DYNAMIC_COPY);
+
+	}
+
 	for (int i = 0;i<NUM_ITER;i++) {
 		check_gl_error();
 		//setup data in the textures
 		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_BUFFER, texPosID[readID]); /*remove this*/
+		glBindBuffer(GL_ARRAY_BUFFER, vboID_Pos[readID]); /*remove this*/
+		std::vector<glm::vec4> texBuff0Read = DEBUG::GetBufferData <glm::vec4>(GL_ARRAY_BUFFER, X.size());
 		glBindTexture(GL_TEXTURE_BUFFER, texPosID[writeID]);
+		glBindBuffer(GL_ARRAY_BUFFER, vboID_Pos[writeID]);
+		std::vector<glm::vec4> texBuff0Write = DEBUG::GetBufferData <glm::vec4>(GL_ARRAY_BUFFER, X.size());
+		
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_BUFFER, texPrePosID[writeID]);
+		glBindBuffer(GL_ARRAY_BUFFER, vboID_PrePos[writeID]);
+		std::vector<glm::vec4> texBuff1 = DEBUG::GetBufferData <glm::vec4>(GL_ARRAY_BUFFER, X_last.size());
+
 		glBindVertexArray(vaoUpdateID[writeID]);
 		glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, vboID_Pos[readID]); //current position
+		glBufferData(GL_TRANSFORM_FEEDBACK_BUFFER, X.size()*sizeof(glm::vec4), &X[0].x, GL_DYNAMIC_COPY);
+		std::vector<glm::vec4> vboID_POS = DEBUG::GetBufferData <glm::vec4>(GL_TRANSFORM_FEEDBACK_BUFFER, X.size());
+
 		glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 1, vboID_PrePos[readID]); //last position
+		glBufferData(GL_TRANSFORM_FEEDBACK_BUFFER, X_last.size()*sizeof(glm::vec4), &X_last[0].x, GL_DYNAMIC_COPY);
+		std::vector<glm::vec4> vboID_prePOS = DEBUG::GetBufferData <glm::vec4>(GL_TRANSFORM_FEEDBACK_BUFFER, X_last.size());
+
 		glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 2, vboID_Normal); //Normal
 		check_gl_error();
 		glEnable(GL_RASTERIZER_DISCARD);    // disable rasterization
@@ -438,12 +475,12 @@ void Cloth_GPU2::Simulate(glm::mat4 MVP)
 		//glBeginQuery(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN, query);
 		glBeginQuery(GL_PRIMITIVES_GENERATED, query);
 		*/
+
 		// begin computation
 		glBeginTransformFeedback(GL_POINTS);
 		glDrawArrays(GL_POINTS, 0, total_points);
 		glEndTransformFeedback();
 		//end computation
-
 		//end query
 		//glEndQuery(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN);
 		/*

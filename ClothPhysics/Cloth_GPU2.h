@@ -46,7 +46,7 @@ private:
 
 	const int width = 1024, height = 1024;
 	const int numX = 2, numY = 2;
-	const int total_points = (numX + 1)*(numY + 1);
+	int total_points = (numX + 1)*(numY + 1);
 	const int sizeX = 4, sizeY = 4;
 	const float hsize = sizeX / 2.0f;
 	const int NUM_ITER = 4;
