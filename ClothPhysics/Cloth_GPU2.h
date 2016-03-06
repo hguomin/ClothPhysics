@@ -76,6 +76,8 @@ private:
 		float rest_bend;
 	} springData;
 
+	bool splitAdded = true;
+
 	float timeStep = 1.0f / 60.0f;
 
 	int texture_size_x = numX + 1;

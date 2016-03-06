@@ -74,7 +74,7 @@ int main(int argc, char ** argv[])
 	float windY = 0.0f;
 	float windZ = 0.0f;
 	unsigned int iterations = 3;
-
+	bool cutOnce = false;
 	TwBar *myBar;
 	check_gl_error();
 	myBar = TwNewBar("Hello!");
@@ -228,11 +228,19 @@ int main(int argc, char ** argv[])
 		{
 			camera.SetSpeed(0.5f);
 			//gpuCloth.Draw(transform, camera);
+			if (cutOnce == false)
+			{
+				//cloth2.Split(3, glm::vec3(0, 0, -1));
+				//cloth2.Split(4, glm::vec3(0, 0, -1));
+				cloth2.Split(5, glm::vec3(0, 0, -1));
+				cutOnce = true;
+			}
 			check_gl_error();
 			cloth2.Draw(transform, camera);
 			check_gl_error();
 			//Current bug. Splitting diagonaly should destroy shearing springs.Not at the moment
-			cloth2.Split(4, glm::vec3(0,0,-1));
+			
+			
 		}
 		TwDraw();
 		display.Update();
