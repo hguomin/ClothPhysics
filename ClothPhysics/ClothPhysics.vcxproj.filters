@@ -90,6 +90,9 @@
     <ClCompile Include="GLError.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="trimesh.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Display.h">
@@ -165,6 +168,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GLHelperFunctions.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="trimesh.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="trimesh_types.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

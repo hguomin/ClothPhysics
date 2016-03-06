@@ -99,6 +99,7 @@
     <ClCompile Include="Spring_Shader.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="TransformFeedback_Shader.cpp" />
+    <ClCompile Include="trimesh.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h" />
@@ -125,6 +126,8 @@
     <ClInclude Include="Texture.h" />
     <ClInclude Include="Transform.h" />
     <ClInclude Include="TransformFeedback_Shader.h" />
+    <ClInclude Include="trimesh.h" />
+    <ClInclude Include="trimesh_types.h" />
     <ClInclude Include="Vertex.h" />
   </ItemGroup>
   <ItemGroup>

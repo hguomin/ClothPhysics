@@ -5,6 +5,7 @@
 #include <array>
 #include "Basic_Shader.h"
 #include "Phong_Shader.h"
+#include "trimesh.h"
 class Cloth_GPU2
 {
 public:
@@ -104,19 +105,6 @@ private:
 	std::array<GLfloat, 4> vWhite;
 	std::array<GLfloat, 4> vGray;
 
-	struct triangle_t
-	{
-		int ID;
-		glm::vec3 p2;
-		glm::vec3 p3;
-		glm::vec3 center;
-		int p2_index;
-		int p3_index;
-		bool above;
-		bool exists;
-	};
-
-	void populateTriangle(triangle_t& tri, glm::vec3 p1, int index2, int index3);
 	bool isPointAbovePlane(glm::vec3 p1, glm::vec3 pointOnPlane, glm::vec3 planeNormal);
 	enum SPRING
 	{
@@ -126,7 +114,8 @@ private:
 	};
 	void FixSprings(std::vector<glm::ivec4>& springs, glm::ivec4& new_spring, glm::vec3 p1, glm::vec3 planeNormal, int index, int new_index, int direction, SPRING springType);
 
-	std::vector<GLushort> calculateIndices();
+	std::vector<GLushort> calculateIndices(trimesh::trimesh_t halfedge_mesh);
 
+	void fillTriangles(std::vector< trimesh::triangle_t>& triang);
 };
 

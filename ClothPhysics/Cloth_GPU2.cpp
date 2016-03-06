@@ -6,6 +6,7 @@
 
 
 
+
 Cloth_GPU2::Cloth_GPU2()
 {
 	
@@ -83,15 +84,6 @@ void Cloth_GPU2::Split(const unsigned int split_index, glm::vec3 planeNormal)
 	
 	//I am assuming springdata does not change on the GPU so no need to collect that
 	//using the spring connections as information about what triangles to draw
-	int index_up = struct_springs[split_index][UP];
-	int index_down = struct_springs[split_index][DOWN];
-	int index_left = struct_springs[split_index][LEFT];
-	int index_right = struct_springs[split_index][RIGHT];
-	int index_upLeft = shear_springs[split_index][UP_LEFT];
-	int index_upRight = shear_springs[split_index][UP_RIGHT];
-	int index_downLeft = shear_springs[split_index][DOWN_LEFT];
-	int index_downRight = shear_springs[split_index][DOWN_RIGHT];
-
 	//calculate the triangle centers
 	/*
 	*  - - *  - - *
@@ -102,54 +94,40 @@ void Cloth_GPU2::Split(const unsigned int split_index, glm::vec3 planeNormal)
 	|  / 4 |  /   |
 	*  - - *  - - *
 	*/
-	triangle_t tri0;
-	triangle_t tri1;
-	triangle_t tri2;
-	triangle_t tri3;
-	triangle_t tri4;
-	triangle_t tri5;
-	std::vector<triangle_t> triangles;
-	glm::vec3 p1 = glm::vec3(X[split_index]);
-	//Populate triangle 0
-	tri0.ID = 0;
-	populateTriangle(tri0, p1, index_left, index_up);
-	triangles.push_back(tri0);
-	//Populate triangle 1
-	tri1.ID = 1;
-	populateTriangle(tri1, p1, index_up, index_upRight);
-	triangles.push_back(tri1);
-	//Populate triangle 2
-	tri2.ID = 2;
-	populateTriangle(tri2, p1, index_upRight, index_right);
-	triangles.push_back(tri2);
-	//Populate triangle 3
-	tri3.ID = 3;
-	populateTriangle(tri3, p1, index_right, index_down);
-	triangles.push_back(tri3);
-	//Populate triangle 4
-	tri4.ID = 4;
-	populateTriangle(tri4, p1, index_down,index_downLeft);
-	triangles.push_back(tri4);
-	//Populate triangle 5
-	tri5.ID = 5;
-	populateTriangle(tri5, p1, index_downLeft,index_left);
-	triangles.push_back(tri5);
+	//set up the halfedge mesh
+	std::vector < trimesh::triangle_t> triangle_mesh;
+	fillTriangles(triangle_mesh);
 
+	std::vector<trimesh::edge_t> edges;
+	trimesh::unordered_edges_from_triangles(triangle_mesh.size(), &triangle_mesh[0], edges);
+
+	trimesh::trimesh_t mesh;
+	mesh.build(total_points, triangle_mesh.size(), &triangle_mesh[0], edges.size(), &edges[0]);
+
+	std::vector<trimesh::index_t> neighs_triang;
+	mesh.vertex_face_neighbors(split_index, neighs_triang);
+
+	std::vector<glm::vec3> triangle_center;
+	triangle_center.resize(neighs_triang.size());
+
+	glm::vec3 p1 = glm::vec3(X[split_index]);
+	
 	bool oneAbove = false;
 	bool oneBelow = false;
 	//need both one triangle above the cutt point as well as one below to be able to split
-	for each (triangle_t tri in triangles)
+	for each (trimesh::index_t face in neighs_triang)
 	{
-		if (tri.exists)
+		glm::vec3 point1 = glm::vec3(X[triangle_mesh[face].v[0]]);
+		glm::vec3 point2 = glm::vec3(X[triangle_mesh[face].v[1]]);
+		glm::vec3 point3 = glm::vec3(X[triangle_mesh[face].v[2]]);
+		glm::vec3 center = (point1 + point2 + point3) * 0.333333f;
+		if (isPointAbovePlane(center,p1, planeNormal))
 		{
-			if (isPointAbovePlane(tri.center,p1, planeNormal))
-			{
-				oneAbove = true;
-			}
-			else
-			{
-				oneBelow = true;
-			}
+			oneAbove = true;
+		}
+		else
+		{
+			oneBelow = true;
 		}
 	}
 	if (oneAbove && oneBelow)
@@ -182,34 +160,63 @@ void Cloth_GPU2::Split(const unsigned int split_index, glm::vec3 planeNormal)
 		shear_springs.push_back(new_shear);
 		struct_springs.push_back(new_struct);
 		bend_springs.push_back(new_bend);
+		//now lets fix the indices for the triangles below the cutting point
+		for each (trimesh::index_t index in neighs_triang)
+		{
+			glm::vec3 p1 = glm::vec3(X[triangle_mesh[index].v[0]]);
+			glm::vec3 p2 = glm::vec3(X[triangle_mesh[index].v[1]]);
+			glm::vec3 p3 = glm::vec3(X[triangle_mesh[index].v[2]]);
+			glm::vec3 center = (p1 + p2 + p3) * 0.333333f;
+			if (!isPointAbovePlane(center, glm::vec3(split_pos), planeNormal))
+			{
+				trimesh::index_t currentIndex = mesh.m_face_halfedges.at(index);
+				for (int  i = 0; i < 3; i++)
+				{
+					long tovert = mesh.m_halfedges.at(currentIndex).to_vertex;
+					if (tovert == split_index)
+					{
+						trimesh::trimesh_t::halfedge_t tmp = mesh.halfedge_ref(currentIndex);
+						tmp.to_vertex = new_index;
+						mesh.m_halfedges.at(currentIndex) = tmp;
+						//delete(tmp);
+					}
+					currentIndex = mesh.halfedge(currentIndex).next_he;
+				}
+			}
+		}
 	}
-	std::vector<GLushort> newIndices = calculateIndices();
+	std::vector<GLushort> newIndices = calculateIndices(mesh);
 	indices = newIndices;
 }
 
-std::vector<GLushort> Cloth_GPU2::calculateIndices()
+std::vector<GLushort> Cloth_GPU2::calculateIndices(trimesh::trimesh_t halfedge_mesh)
 {
 	std::vector<GLushort> ret;
-	for (unsigned int i = 0; i < X.size(); i++)
+	for each (trimesh::index_t face in halfedge_mesh.m_face_halfedges)
 	{
-		int index = i;
-		int down = struct_springs[index][DOWN];
-		int right = struct_springs[index][RIGHT];
-		int downRight = shear_springs[index][DOWN_RIGHT];
-		if (down != -1 && right != -1)
-		{
-			ret.push_back(index);
-			ret.push_back(down);
-			ret.push_back(right);
-		}
-		if (right != -1 && downRight != -1)
-		{
-			ret.push_back(right);
-			ret.push_back(down);
-			ret.push_back(downRight);
-		}
+		trimesh::trimesh_t::halfedge_t halfedge = halfedge_mesh.m_halfedges.at(face);
+		ret.push_back(halfedge.to_vertex);
+		halfedge = halfedge_mesh.halfedge_ref(halfedge.next_he);
+		ret.push_back(halfedge.to_vertex);
+		halfedge = halfedge_mesh.halfedge_ref(halfedge.next_he);
+		ret.push_back(halfedge.to_vertex);
 	}
 	return ret;
+}
+
+void Cloth_GPU2::fillTriangles(std::vector<trimesh::triangle_t>& triang)
+{
+	triang.resize(indices.size() / 3);
+	int count = 0;
+	for (int i = 0; i < indices.size(); i++)
+	{
+		triang[count].v[0] = indices[i];
+		i++;
+		triang[count].v[1] = indices[i];
+		i++;
+		triang[count].v[2] = indices[i];
+		count++;
+	}
 }
 
 void Cloth_GPU2::FixSprings(std::vector<glm::ivec4>& springs, glm::ivec4& new_spring, glm::vec3 p1, glm::vec3 planeNormal, int index, int new_index, int direction, SPRING springType)
@@ -258,24 +265,6 @@ void Cloth_GPU2::FixSprings(std::vector<glm::ivec4>& springs, glm::ivec4& new_sp
 				bend_springs[bend_above][direction] = -1;
 			}
 		}
-	}
-}
-
-void Cloth_GPU2::populateTriangle(triangle_t& tri,glm::vec3 p1, int index2, int index3)
-{
-	
-	if (index2 != - 1 && index3 != -1) //does it even exist
-	{
-		tri.exists = true;
-		tri.p2_index = index2;
-		tri.p3_index = index3;
-		tri.p2 = glm::vec3(X[index2]);
-		tri.p3 = glm::vec3(X[index3]);
-		tri.center = glm::vec3((p1 + tri.p2 + tri.p3)*0.333333f); //divide by 3 to get average
-	}
-	else
-	{
-		tri.exists = false;
 	}
 }
 
