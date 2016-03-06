@@ -163,15 +163,19 @@ void Cloth_GPU2::Split(const unsigned int split_index, glm::vec3 planeNormal)
 		int new_index = X.size();
 		X.push_back(split_pos);
 		X_last.push_back(prev_split_pos);
+		//for struct spring calculation
 		glm::ivec4 before_split_index_struct = struct_springs[split_index];
 		glm::ivec4 after_split_index_struct(-1);
 		glm::ivec4 before_split_new_stuct(-1);
 		glm::ivec4 after_split_new_struct(-1);
-		glm::vec4 split_bend_spring(-1);
-		glm::vec4 split_shear_spring(-1);
+
+		//for shear spring calculation
+		glm::ivec4 new_shear = shear_springs[split_index];
+		glm::ivec4 new_struct = struct_springs[split_index];
 		//Remapping the springs for the CUT particle
 		for (unsigned int i = 0; i < 4; i++)
 		{
+			/*
 			if (before_split_index_struct[i] != -1)
 			{
 				//get the position of the connected point
@@ -223,21 +227,71 @@ void Cloth_GPU2::Split(const unsigned int split_index, glm::vec3 planeNormal)
 					struct_springs.push_back(after_split_new_struct);
 				}
 			}
+			*/
+			FixSprings(struct_springs, new_struct, p1, planeNormal, split_index, new_index, i);
+			//check for shear spring
+			FixSprings(shear_springs, new_shear, p1, planeNormal, split_index, new_index, i);
+			/*
+			if (shear_springs[split_index][i] != -1)
+			{
+				glm::vec3 pos = glm::vec3(X[shear_springs[split_index][i]]);
+				bool above = isPointAbovePlane(pos, p1, planeNormal);
+				if (!above) //if the point is below the plane
+				{
+					int temp = shear_springs[split_index][i];
+					shear_springs[split_index][i] = -1; //remove link to below
+					for (int j = 0; j < 4; j++)
+					{
+						if (shear_springs[temp][j] == split_index)
+						{
+							shear_springs[temp][j] = new_index;
+						}
+					}
+					new_shear[i] = temp;
+				}
+			}
+			*/
 		}
+		shear_springs.push_back(new_shear);
+		struct_springs.push_back(new_struct);
 	}
 	index_down;
 }
 
-void Cloth_GPU2::delinkSpring(glm::ivec4& start, glm::ivec4& end)
+void Cloth_GPU2::FixSprings(std::vector<glm::ivec4>& springs, glm::ivec4& new_spring, glm::vec3 p1, glm::vec3 planeNormal, int index, int new_index, int xyz)
 {
-	//quick and dirty
-	for (int i = 0; i < 4; i++)
+	if (springs[index][xyz] != -1)
 	{
-		for (int j = 0; j < 4; j++)
+		glm::vec3 pos = glm::vec3(X[springs[index][xyz]]);
+		bool above = isPointAbovePlane(pos, p1, planeNormal);
+		if (!above) //if the point is below the plane
 		{
-			if (start[i] == end[j])
+			int temp = springs[index][xyz];
+			springs[index][xyz] = -1; //remove link to below
+			for (int j = 0; j < 4; j++)
 			{
-
+				if (springs[temp][j] == index)
+				{
+					springs[temp][j] = new_index;
+				}
+			}
+			new_spring[xyz] = temp;
+			switch (xyz)
+			{
+			case(UP) :
+				new_spring[DOWN] = -1;
+				break;
+			case(DOWN) :
+				new_spring[UP] = -1;
+				break;
+			case(LEFT) :
+				new_spring[RIGHT] = -1;
+				break;
+			case(RIGHT) :
+				new_spring[LEFT] = -1;
+				break;
+			default:
+				break;
 			}
 		}
 	}
