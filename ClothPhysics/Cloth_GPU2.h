@@ -20,6 +20,7 @@ private:
 	void setupIndices();
 	void setupShaders();
 	void setupSprings();
+	void setupHEMesh();
 	glm::ivec2 getNextNeighbor(int n);
 	void createVBO();
 	void setupTransformFeedback();
@@ -46,7 +47,9 @@ private:
 
 	const int width = 1024, height = 1024;
 	const int numX = 2, numY = 2;
-	int total_points = (numX + 1)*(numY + 1);
+	int current_points = (numX + 1)*(numY + 1);
+	int num_indices;
+	const int max_points = 3 * current_points;
 	const int sizeX = 4, sizeY = 4;
 	const float hsize = sizeX / 2.0f;
 	const int NUM_ITER = 4;
@@ -61,6 +64,8 @@ private:
 	std::vector<glm::ivec4> struct_springs;
 	std::vector<glm::ivec4> shear_springs;
 	std::vector<glm::ivec4> bend_springs;
+
+	trimesh::trimesh_t m_he_mesh;
 
 	glm::vec2 inv_cloth_size = glm::vec2(float(sizeX) / numX, float(sizeY) / numY);
 	glm::vec3 gravity = glm::vec3(0.0f, -0.00981f, 0.0f);
@@ -99,14 +104,6 @@ private:
 	GLuint texPosID[2];
 	GLuint texPrePosID[2];
 
-	GLuint tfID_ForceCalc;
-	GLuint tfID_SplitCalc;
-
-	std::array<GLfloat, 4> vRed;
-	std::array<GLfloat, 4> vBeige;
-	std::array<GLfloat, 4> vWhite;
-	std::array<GLfloat, 4> vGray;
-
 	bool isPointAbovePlane(glm::vec3 p1, glm::vec3 pointOnPlane, glm::vec3 planeNormal);
 	enum SPRING
 	{
@@ -115,8 +112,6 @@ private:
 		BEND
 	};
 	void FixSprings(std::vector<glm::ivec4>& springs, glm::ivec4& new_spring, glm::vec3 p1, glm::vec3 planeNormal, int index, int new_index, int direction, SPRING springType);
-
-	std::vector<GLushort> calculateIndices(trimesh::trimesh_t halfedge_mesh);
 
 	void fillTriangles(std::vector< trimesh::triangle_t>& triang);
 };

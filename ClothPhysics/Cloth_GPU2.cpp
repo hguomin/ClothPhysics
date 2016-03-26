@@ -9,13 +9,9 @@
 
 Cloth_GPU2::Cloth_GPU2()
 {
-	
-	vRed = { 1.0f, 0.0f, 0.0f, 1.0f };
-	vBeige = { 1.0f, 0.8f, 0.7f, 1.0f };
-	vWhite = { 1.0f, 1.0f, 1.0f, 1.0f };
-	vGray = { .25f, .25f, .25f, 1.0f };
 	setupPositions();
 	setupIndices();
+	setupHEMesh();
 	setupSprings();
 	setupShaders();
 	check_gl_error();
@@ -42,9 +38,12 @@ Cloth_GPU2::~Cloth_GPU2()
 	glDeleteBuffers(2, vboID_Pos);
 	glDeleteBuffers(2, vboID_PrePos);
 	glDeleteBuffers(1, &vboIndices);
+	glDeleteBuffers(1, &vboID_Normal);
+	glDeleteBuffers(1, &vboID_TexCoord);
 
-	glDeleteTransformFeedbacks(1, &tfID_ForceCalc);
-	glDeleteTransformFeedbacks(1, &tfID_SplitCalc);
+	glDeleteBuffers(1, &vboID_Struct);
+	glDeleteBuffers(1, &vboID_Shear);
+	glDeleteBuffers(1, &vboID_Bend);
 }
 
 void Cloth_GPU2::Draw(const Transform& transform, const Camera& camera)
@@ -52,8 +51,6 @@ void Cloth_GPU2::Draw(const Transform& transform, const Camera& camera)
 	glm::mat4 mMVP = transform.GetMatrix() * camera.GetViewProjection();
 	
 	Simulate(mMVP);
-	
-
 	
 	//CHECK_GL_ERRORS;
 	check_gl_error();
@@ -64,174 +61,12 @@ void Cloth_GPU2::Draw(const Transform& transform, const Camera& camera)
 	check_gl_error();
 	renderShader.UpdateValues(transform, camera);
 	check_gl_error();
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vboIndices);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size()*sizeof(GLushort), &indices[0], GL_DYNAMIC_COPY);
-	std::vector<GLushort> tmp = DEBUG::GetBufferData<GLushort>(GL_ELEMENT_ARRAY_BUFFER, indices.size());
-	glBindBuffer(GL_ARRAY_BUFFER, vboID_TexCoord);
-	glBufferData(GL_ARRAY_BUFFER, Tex_coord.size()*sizeof(glm::vec2), &Tex_coord[0], GL_DYNAMIC_COPY);
-
-	glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_SHORT, 0);
+	glDrawElements(GL_TRIANGLES, num_indices, GL_UNSIGNED_SHORT, 0);
 	renderShader.UnUse();
 	glEnable(GL_DEPTH_TEST);
 	glBindVertexArray(0);
 	check_gl_error();
 	//CHECK_GL_ERRORS
-}
-
-//assuming split_index is in range
-void Cloth_GPU2::Split(const unsigned int split_index, glm::vec3 planeNormal)
-{
-	//collecting data from GPU
-	glBindVertexArray(vaoUpdateID[writeID]);
-	glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, vboID_Pos[readID]); //current position
-	X = DEBUG::GetBufferData<glm::vec4>(GL_TRANSFORM_FEEDBACK_BUFFER, X.size());
-	glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 1, vboID_PrePos[readID]); //last position
-	X_last = DEBUG::GetBufferData<glm::vec4>(GL_TRANSFORM_FEEDBACK_BUFFER, X_last.size());
-	
-	//I am assuming springdata does not change on the GPU so no need to collect that
-	//using the spring connections as information about what triangles to draw
-	//calculate the triangle centers
-	/*
-	*  - - *  - - *
-	|   /  | 1 /  |
-	|  / 0 |  / 2 |
-	*  - - *  - - *
-	| 5 /  | 3 /  |
-	|  / 4 |  /   |
-	*  - - *  - - *
-	*/
-	//set up the halfedge mesh
-	std::vector < trimesh::triangle_t> triangle_mesh;
-	fillTriangles(triangle_mesh);
-
-	std::vector<trimesh::edge_t> edges;
-	trimesh::unordered_edges_from_triangles(triangle_mesh.size(), &triangle_mesh[0], edges);
-
-	trimesh::trimesh_t mesh;
-	mesh.build(total_points, triangle_mesh.size(), &triangle_mesh[0], edges.size(), &edges[0]);
-
-	std::vector<trimesh::index_t> neighs_triang;
-	mesh.vertex_face_neighbors(split_index, neighs_triang);
-
-	std::vector<glm::vec3> triangle_center;
-	triangle_center.resize(neighs_triang.size());
-
-	glm::vec3 p1 = glm::vec3(X[split_index]);
-	
-	bool oneAbove = false;
-	bool oneBelow = false;
-	//need both one triangle above the cutt point as well as one below to be able to split
-	for each (trimesh::index_t face in neighs_triang)
-	{
-		glm::vec3 point1 = glm::vec3(X[triangle_mesh[face].v[0]]);
-		glm::vec3 point2 = glm::vec3(X[triangle_mesh[face].v[1]]);
-		glm::vec3 point3 = glm::vec3(X[triangle_mesh[face].v[2]]);
-		glm::vec3 center = (point1 + point2 + point3) * 0.333333f;
-		if (isPointAbovePlane(center,p1, planeNormal))
-		{
-			oneAbove = true;
-		}
-		else
-		{
-			oneBelow = true;
-		}
-	}
-	if (oneAbove && oneBelow)
-	{
-		//so we are going to do a cut. Better changing the mass for the point we are cutting
-		glm::vec4 split_pos = X[split_index];
-		glm::vec4 prev_split_pos = X_last[split_index];
-		glm::vec2 tex = Tex_coord[split_index];
-		split_pos.w = split_pos.w / 2;
-		prev_split_pos.w = prev_split_pos.w / 2;
-		X[split_index] = split_pos;
-		X_last[split_index] = prev_split_pos;
-		int new_index = X.size();
-		X.push_back(split_pos);
-		X_last.push_back(prev_split_pos);
-		Tex_coord.push_back(tex);
-		splitAdded = false;
-		//for struct spring calculation
-		
-		//for shear spring calculation
-		glm::ivec4 new_shear(-1);
-		glm::ivec4 new_struct = struct_springs[split_index];
-		glm::ivec4 new_bend = bend_springs[split_index];
-		//Remapping the springs for the CUT particle
-		for (unsigned int i = 0; i < 4; i++)
-		{
-			
-			FixSprings(struct_springs, new_struct, p1, planeNormal, split_index, new_index, i, SPRING::STRUCT);
-			//check for shear spring
-			FixSprings(shear_springs, new_shear, p1, planeNormal, split_index, new_index, i, SPRING::SHEAR);
-			FixSprings(bend_springs, new_bend, p1, planeNormal, split_index, new_index, i, SPRING::BEND);
-			
-		}
-		shear_springs.push_back(new_shear);
-		struct_springs.push_back(new_struct);
-		bend_springs.push_back(new_bend);
-		//now lets fix the indices for the triangles below the cutting point
-		for each (trimesh::index_t index in neighs_triang)
-		{
-			glm::vec3 p1 = glm::vec3(X[triangle_mesh[index].v[0]]);
-			glm::vec3 p2 = glm::vec3(X[triangle_mesh[index].v[1]]);
-			glm::vec3 p3 = glm::vec3(X[triangle_mesh[index].v[2]]);
-			glm::vec3 center = (p1 + p2 + p3) * 0.333333f;
-			if (!isPointAbovePlane(center, glm::vec3(split_pos), planeNormal))
-			{
-				trimesh::index_t currentIndex = mesh.m_face_halfedges.at(index);
-				for (int  i = 0; i < 3; i++)
-				{
-					long tovert = mesh.m_halfedges.at(currentIndex).to_vertex;
-					if (tovert == split_index)
-					{
-						trimesh::trimesh_t::halfedge_t tmp = mesh.halfedge_ref(currentIndex);
-						tmp.to_vertex = new_index;
-						mesh.m_halfedges.at(currentIndex) = tmp;
-						//delete(tmp);
-					}
-					currentIndex = mesh.halfedge(currentIndex).next_he;
-				}
-			}
-		}
-	}
-	std::vector<GLushort> newIndices = calculateIndices(mesh);
-	indices = newIndices;
-	//Update Buffers
-	if (!splitAdded)
-	{
-		for (int i = 0; i < 2; i++)
-		{
-			glBindVertexArray(vaoUpdateID[i]);
-			glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, vboID_Pos[i]); //current position
-			glBufferSubData(GL_TRANSFORM_FEEDBACK_BUFFER, 0, X.size()*sizeof(glm::vec4), &X[0].x);
-			std::vector<glm::vec4> POS = DEBUG::GetBufferData <glm::vec4>(GL_TRANSFORM_FEEDBACK_BUFFER, X.size());
-			check_gl_error();
-			glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 1, vboID_PrePos[i]); //last position
-			check_gl_error();
-			glBufferSubData(GL_TRANSFORM_FEEDBACK_BUFFER, 0, X_last.size()*sizeof(glm::vec4), &X_last[0].x);
-			std::vector<glm::vec4> PRE_POS = DEBUG::GetBufferData <glm::vec4>(GL_TRANSFORM_FEEDBACK_BUFFER, X_last.size());
-			check_gl_error();
-		}
-		splitAdded = true;
-	}
-	total_points++;
-}
-
-std::vector<GLushort> Cloth_GPU2::calculateIndices(trimesh::trimesh_t halfedge_mesh)
-{
-	std::vector<GLushort> ret;
-	for each (trimesh::index_t face in halfedge_mesh.m_face_halfedges)
-	{
-		trimesh::trimesh_t::halfedge_t halfedge = halfedge_mesh.m_halfedges.at(face);
-		ret.push_back(halfedge.to_vertex);
-		halfedge = halfedge_mesh.halfedge_ref(halfedge.next_he);
-		ret.push_back(halfedge.to_vertex);
-		halfedge = halfedge_mesh.halfedge_ref(halfedge.next_he);
-		ret.push_back(halfedge.to_vertex);
-	}
-	return ret;
 }
 
 void Cloth_GPU2::fillTriangles(std::vector<trimesh::triangle_t>& triang)
@@ -329,43 +164,43 @@ void Cloth_GPU2::createVBO()
 	glGenTextures(2, texPosID);
 	glGenTextures(2, texPrePosID);
 
-	
+	unsigned int max_vertices = 3 * X.size();
 	
 	//set update vao
 	for (unsigned int i = 0; i < 2; i++)
 	{
 		glBindVertexArray(vaoUpdateID[i]);
 		glBindBuffer(GL_ARRAY_BUFFER, vboID_Pos[i]);
-		glBufferData(GL_ARRAY_BUFFER, 3*X.size()*sizeof(glm::vec4), &X[0].x, GL_DYNAMIC_COPY);
+		glBufferData(GL_ARRAY_BUFFER, max_vertices*sizeof(glm::vec4), &X[0].x, GL_DYNAMIC_COPY);
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
 		
 
 		glBindBuffer(GL_ARRAY_BUFFER, vboID_PrePos[i]);
-		glBufferData(GL_ARRAY_BUFFER, 3*X_last.size()*sizeof(glm::vec4), &X_last[0].x, GL_DYNAMIC_COPY);
+		glBufferData(GL_ARRAY_BUFFER, max_vertices*sizeof(glm::vec4), &X_last[0].x, GL_DYNAMIC_COPY);
 		glEnableVertexAttribArray(1);
 		glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, 0);
 
 		glBindBuffer(GL_ARRAY_BUFFER, vboID_Struct);
-		glBufferData(GL_ARRAY_BUFFER, struct_springs.size()*sizeof(glm::ivec4), &struct_springs[0].x, GL_STATIC_READ);
+		glBufferData(GL_ARRAY_BUFFER, max_vertices*sizeof(glm::ivec4), &struct_springs[0].x, GL_STATIC_READ);
 		glEnableVertexAttribArray(2);
 		glVertexAttribIPointer(2, 4, GL_INT,  0, 0);
 		check_gl_error();
 
 		glBindBuffer(GL_ARRAY_BUFFER, vboID_Shear);
-		glBufferData(GL_ARRAY_BUFFER, shear_springs.size()*sizeof(glm::ivec4), &shear_springs[0].x, GL_STATIC_READ);
+		glBufferData(GL_ARRAY_BUFFER, max_vertices*sizeof(glm::ivec4), &shear_springs[0].x, GL_STATIC_READ);
 		glEnableVertexAttribArray(3);
 		glVertexAttribIPointer(3, 4, GL_INT,  0, 0);
 		check_gl_error();
 
 		glBindBuffer(GL_ARRAY_BUFFER, vboID_Bend);
-		glBufferData(GL_ARRAY_BUFFER, bend_springs.size()*sizeof(glm::ivec4), &bend_springs[0].x, GL_STATIC_READ);
+		glBufferData(GL_ARRAY_BUFFER, max_vertices*sizeof(glm::ivec4), &bend_springs[0].x, GL_STATIC_READ);
 		glEnableVertexAttribArray(4);
 		glVertexAttribIPointer(4, 4, GL_INT, 0, 0);
 		check_gl_error();
 
 		glBindBuffer(GL_ARRAY_BUFFER, vboID_Normal);
-		glBufferData(GL_ARRAY_BUFFER, 3*X.size()*sizeof(glm::vec3), nullptr, GL_STATIC_READ);
+		glBufferData(GL_ARRAY_BUFFER, 3* max_vertices*sizeof(glm::vec3), nullptr, GL_STATIC_READ);
 		glEnableVertexAttribArray(5);
 		glVertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, 0, 0);
 		
@@ -416,10 +251,6 @@ void Cloth_GPU2::createVBO()
 
 void Cloth_GPU2::setupTransformFeedback()
 {
-	glGenTransformFeedbacks(1, &tfID_ForceCalc);
-	check_gl_error();
-	glBindTransformFeedback(GL_TRANSFORM_FEEDBACK, tfID_ForceCalc);
-	check_gl_error();
 	const char* varying_names[] = { 
 		"out_position_mass",
 		"out_prev_position",
@@ -428,113 +259,52 @@ void Cloth_GPU2::setupTransformFeedback()
 	check_gl_error();
 	glLinkProgram(massSpringShader.getProgram());
 	check_gl_error();
-	/*
-	glGenTransformFeedbacks(1, &tfID_SplitCalc);
-	check_gl_error();
-	glBindTransformFeedback(GL_TRANSFORM_FEEDBACK, tfID_SplitCalc);
-	check_gl_error();
-	const char* varying_names2[] =
-	{
-		"out_index",
-		"out_connection"
-	};
-	glTransformFeedbackVaryings(splitShader.getProgram(), 2, varying_names2, GL_SEPARATE_ATTRIBS);
-	check_gl_error();
-	*/
 }
 
 void Cloth_GPU2::Simulate(glm::mat4 MVP)
 {
 	massSpringShader.Use();
 	massSpringShader_UploadData(MVP);
-	//Syncronize the buffer data. We might have had a cut
-	
-	
 	
 	//update spring data
-	/*
-	for (int i = 0; i < 2; i++)
-	{
-		glBindVertexArray(vaoUpdateID[i]);
-		glBindBuffer(GL_ARRAY_BUFFER, vboID_Struct);
-		glBufferData(GL_ARRAY_BUFFER, struct_springs.size()*sizeof(glm::ivec4), &struct_springs[0].x, GL_STATIC_DRAW);
-		check_gl_error();
-
-		glBindBuffer(GL_ARRAY_BUFFER, vboID_Shear);
-		glBufferData(GL_ARRAY_BUFFER, shear_springs.size()*sizeof(glm::ivec4), &shear_springs[0].x, GL_STATIC_DRAW);
-		check_gl_error();
-
-		glBindBuffer(GL_ARRAY_BUFFER, vboID_Bend);
-		glBufferData(GL_ARRAY_BUFFER, bend_springs.size()*sizeof(glm::ivec4), &bend_springs[0].x, GL_STATIC_DRAW);
-		check_gl_error();
-	}
-	*/
+	
 	for (int i = 0;i<NUM_ITER;i++) {
 		check_gl_error();
 		//setup data in the textures
 		glActiveTexture(GL_TEXTURE0);
-		//glBindTexture(GL_TEXTURE_BUFFER, texPosID[readID]); /*remove this*/
-		//glBindBuffer(GL_ARRAY_BUFFER, vboID_Pos[readID]); /*remove this*/
-		//std::vector<glm::vec4> texBuff0Read = DEBUG::GetBufferData <glm::vec4>(GL_ARRAY_BUFFER, X.size());
 		glBindTexture(GL_TEXTURE_BUFFER, texPosID[writeID]);
 		glBindBuffer(GL_ARRAY_BUFFER, vboID_Pos[writeID]);
-		std::vector<glm::vec4> texBuff0Write = DEBUG::GetBufferData <glm::vec4>(GL_ARRAY_BUFFER, X.size());
 		
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_BUFFER, texPrePosID[writeID]);
 		glBindBuffer(GL_ARRAY_BUFFER, vboID_PrePos[writeID]);
-		std::vector<glm::vec4> texBuff1Write = DEBUG::GetBufferData <glm::vec4>(GL_ARRAY_BUFFER, X_last.size());
 
 		glBindVertexArray(vaoUpdateID[writeID]);
 		glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, vboID_Pos[readID]); //current position
 		glBufferData(GL_TRANSFORM_FEEDBACK_BUFFER, X.size()*sizeof(glm::vec4), &X[0].x, GL_DYNAMIC_COPY);
-		std::vector<glm::vec4> vboID_POS = DEBUG::GetBufferData <glm::vec4>(GL_TRANSFORM_FEEDBACK_BUFFER, X.size());
 
 		glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 1, vboID_PrePos[readID]); //last position
 		glBufferData(GL_TRANSFORM_FEEDBACK_BUFFER, X_last.size()*sizeof(glm::vec4), &X_last[0].x, GL_DYNAMIC_COPY);
-		std::vector<glm::vec4> vboID_prePOS = DEBUG::GetBufferData <glm::vec4>(GL_TRANSFORM_FEEDBACK_BUFFER, X_last.size());
 
 		glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 2, vboID_Normal); //Normal
 		check_gl_error();
 		glEnable(GL_RASTERIZER_DISCARD);    // disable rasterization
-		/*
-		//start a query
-		GLuint query;
-		glGenQueries(1, &query);
-		//glBeginQuery(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN, query);
-		glBeginQuery(GL_PRIMITIVES_GENERATED, query);
-		*/
+
 
 		// begin computation
 		glBeginTransformFeedback(GL_POINTS);
-		glDrawArrays(GL_POINTS, 0, total_points);
+		glDrawArrays(GL_POINTS, 0, current_points);
 		glEndTransformFeedback();
 		//end computation
-		//end query
-		//glEndQuery(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN);
-		/*
-		glEndQuery(GL_PRIMITIVES_GENERATED);
-		GLuint primitives;
-		glGetQueryObjectuiv(query, GL_QUERY_RESULT, &primitives);
-		printf("%u primitives written!\n\n", primitives);
-		*/
 
 		check_gl_error();
 		
-		//get data from the buffers
-		//std::vector<glm::vec3> temp = DEBUG::GetBufferData<glm::vec3>(GL_TRANSFORM_FEEDBACK_BUFFER, X.size());
-		//glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, vboID_Pos[readID]);
-		//std::vector<glm::vec4> temp2 = DEBUG::GetBufferData<glm::vec4>(GL_TRANSFORM_FEEDBACK_BUFFER, 3 * X.size());
-		
-		//make sure all calculations are done
 		glFlush();
 		glDisable(GL_RASTERIZER_DISCARD); //enable rasterization again
 
 		std::swap(readID, writeID); //switch write and read
 	}
 	massSpringShader.UnUse();
-	//extract data to CPU for ease of use in split (maybe should be in split)
-	//X = DEBUG::GetBufferData<glm::vec4>(GL_TRANSFORM_FEEDBACK_BUFFER, X.size());
 }
 
 void Cloth_GPU2::massSpringShader_UploadData(glm::mat4 MVP)
@@ -565,9 +335,9 @@ void Cloth_GPU2::massSpringShader_UploadData(glm::mat4 MVP)
 
 void Cloth_GPU2::setupPositions()
 {
-	X.resize(total_points);
-	X_last.resize(total_points);
-	Tex_coord.resize(total_points);
+	X.resize(current_points);
+	X_last.resize(current_points);
+	Tex_coord.resize(current_points);
 	size_t count = 0;
 	int v = numY + 1;
 	int u = numX + 1;
@@ -609,6 +379,7 @@ void Cloth_GPU2::setupIndices()
 			}
 		}
 	}
+	num_indices = indices.size();
 }
 
 void Cloth_GPU2::setupShaders()
@@ -758,4 +529,108 @@ glm::ivec2 Cloth_GPU2::getNextNeighbor(int n) {
 	if (n == 9) return glm::ivec2(0, -2);
 	if (n == 10) return glm::ivec2(-2, 0);
 	if (n == 11) return glm::ivec2(0, 2);
+}
+
+void Cloth_GPU2::setupHEMesh()
+{
+	std::vector < trimesh::triangle_t> triangle_mesh;
+	fillTriangles(triangle_mesh);
+
+	std::vector<trimesh::edge_t> edges;
+	trimesh::unordered_edges_from_triangles(triangle_mesh.size(), &triangle_mesh[0], edges);
+
+	m_he_mesh.build(current_points, triangle_mesh.size(), &triangle_mesh[0], edges.size(), &edges[0]);
+}
+
+//assuming split_index is in range
+void Cloth_GPU2::Split(const unsigned int split_index, glm::vec3 planeNormal)
+{
+	//collecting data from GPU
+	glBindVertexArray(vaoUpdateID[writeID]);
+	glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, vboID_Pos[readID]); //current position
+	X = DEBUG::GetBufferData<glm::vec4>(GL_TRANSFORM_FEEDBACK_BUFFER, X.size());
+	glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 1, vboID_PrePos[readID]); //last position
+	X_last = DEBUG::GetBufferData<glm::vec4>(GL_TRANSFORM_FEEDBACK_BUFFER, X_last.size());
+
+	//I am assuming springdata does not change on the GPU so no need to collect that
+	//using the spring connections as information about what triangles to draw
+	//calculate the triangle centers
+	/*
+	*  - - *  - - *
+	|   /  | 1 /  |
+	|  / 0 |  / 2 |
+	*  - - *  - - *
+	| 5 /  | 3 /  |
+	|  / 4 |  /   |
+	*  - - *  - - *
+	*/
+	//get the triangle neighbours of the splitting index
+	std::vector<trimesh::index_t> neighs_triang;
+	m_he_mesh.vertex_face_neighbors(split_index, neighs_triang);
+
+	std::vector<glm::vec3> triangle_center;
+	std::vector<trimesh::index_t> face_above;
+	std::vector<trimesh::index_t> face_below;
+
+	glm::vec3 p1 = glm::vec3(X[split_index]);
+
+	bool oneAbove = false;
+	bool oneBelow = false;
+	//need both one triangle above the cutt point as well as one below to be able to split
+	for each (trimesh::index_t face in neighs_triang)
+	{
+		std::vector<trimesh::index_t> triangle_vertices = m_he_mesh.vertices_for_face(face);
+		glm::vec3 point1 = glm::vec3(X[triangle_vertices[0]]);
+		glm::vec3 point2 = glm::vec3(X[triangle_vertices[1]]);
+		glm::vec3 point3 = glm::vec3(X[triangle_vertices[2]]);
+		glm::vec3 center = (point1 + point2 + point3) * 0.333333f;
+		if (isPointAbovePlane(center, p1, planeNormal))
+		{
+			oneAbove = true;
+			face_above.push_back(face);
+		}
+		else
+		{
+			oneBelow = true;
+			face_below.push_back(face);
+		}
+		triangle_center.push_back(center);
+	}
+	//we need atleast one above and one below the cut to split the mesh
+	//perform no split if can't split any more
+	if (oneAbove && oneBelow && (current_points < max_points))
+	{
+		//so we are going to do a cut. Better changing the mass for the point we are cutting
+		glm::vec4 split_pos = X[split_index];
+		glm::vec4 prev_split_pos = X_last[split_index];
+		glm::vec2 tex = Tex_coord[split_index];
+		split_pos.w = split_pos.w / 2;
+		prev_split_pos.w = prev_split_pos.w / 2;
+		X[split_index] = split_pos;
+		X_last[split_index] = prev_split_pos;
+
+		int new_index = X.size(); //save the size as new index before adding it
+		X.push_back(split_pos);
+		X_last.push_back(prev_split_pos);
+		Tex_coord.push_back(tex);
+		splitAdded = false;
+		//for spring calculations
+		glm::ivec4 new_shear(-1);
+		glm::ivec4 new_struct = struct_springs[split_index];
+		glm::ivec4 new_bend = bend_springs[split_index];
+		//Remapping the springs for the CUT particle
+		for (unsigned int direction = 0; direction < 4; direction++)
+		{
+			FixSprings(struct_springs, new_struct, p1, planeNormal, split_index, new_index, direction, SPRING::STRUCT);
+			FixSprings(shear_springs, new_shear, p1, planeNormal, split_index, new_index, direction, SPRING::SHEAR);
+			FixSprings(bend_springs, new_bend, p1, planeNormal, split_index, new_index, direction, SPRING::BEND);
+		}
+		shear_springs.push_back(new_shear);
+		struct_springs.push_back(new_struct);
+		bend_springs.push_back(new_bend);
+		//now lets fix the indices for the triangles below the cutting point
+		m_he_mesh.split_vertex(split_index, face_above, face_below);
+	}
+	indices = m_he_mesh.get_indices();
+	num_indices = indices.size();
 }

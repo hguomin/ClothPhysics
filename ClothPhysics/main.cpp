@@ -104,7 +104,7 @@ int main(int argc, char ** argv[])
 		previousTicks = currentTicks;
 		float totalDeltaTime = frameTime / DESIRED_FRAME_TIME;
 
-		display.Clear(1, 0, 1, 1);
+		display.Clear(0, 0, 0, 1);
 
 		
 		while (SDL_PollEvent(&sdl_event))
@@ -230,8 +230,8 @@ int main(int argc, char ** argv[])
 			//gpuCloth.Draw(transform, camera);
 			if (cutOnce == false)
 			{
-				//cloth2.Split(3, glm::vec3(0, 0, -1));
-				//cloth2.Split(4, glm::vec3(0, 0, -1));
+				cloth2.Split(3, glm::vec3(0, 0, -1));
+				cloth2.Split(4, glm::vec3(0, 0, -1));
 				cloth2.Split(5, glm::vec3(0, 0, -1));
 				cutOnce = true;
 			}
@@ -239,10 +239,8 @@ int main(int argc, char ** argv[])
 			cloth2.Draw(transform, camera);
 			check_gl_error();
 			//Current bug. Splitting diagonaly should destroy shearing springs.Not at the moment
-			
-			
 		}
-		TwDraw();
+		//TwDraw();
 		display.Update();
 		
 

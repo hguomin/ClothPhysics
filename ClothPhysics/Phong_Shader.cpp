@@ -46,11 +46,11 @@ void Phong_Shader::UpdateValues(const Transform& transform, const Camera& camera
 	glUniform3fv(UnifLoc("u_lightDiffuseIntensitys"), 1, glm::value_ptr(diffuseintensity));
 	glUniform3fv(UnifLoc("u_lightSpecularIntensitys"), 1, glm::value_ptr(specularintensity));
 
-	glm::vec3 ambreflect = glm::vec3(1, 1, 1);
+	glm::vec3 ambreflect = glm::vec3(0.5, 0.5, 0.5);
 	glUniform3fv(UnifLoc("u_matAmbientReflectances"), 1, glm::value_ptr(ambreflect));
-	glm::vec3 diffusereflect = glm::vec3(1, 1, 1);
+	glm::vec3 diffusereflect = glm::vec3(0.5, 0.5, 0.5);
 	glUniform3fv(UnifLoc("u_matDiffuseReflectances"), 1, glm::value_ptr(diffusereflect));
-	glm::vec3 specreflect = glm::vec3(1, 1, 1);
+	glm::vec3 specreflect = glm::vec3(0.5, 0.5, 0.5);
 	glUniform3fv(UnifLoc("u_matSpecularReflectances"), 1, glm::value_ptr(specreflect));
 
 	float shininess = 64;

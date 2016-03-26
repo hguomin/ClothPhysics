@@ -145,7 +145,13 @@ void sphereCollision(inout vec3 x, vec3 center, float r)
 		p3 = texelFetch(tex_position_mass, index2).xyz;
 		normal += getNormal(p1,p2,p3);
 	}
-	return normalize(normal);
+	return normal;
+}
+
+vec3 Wind(vec3 normal, vec3 wind)
+{
+	vec3 d = normalize(normal);
+	return normal*dot(d,wind);
 }
   
 void main(void) 
@@ -154,6 +160,8 @@ void main(void)
 	vec3 pos = position_mass.xyz;
     vec3 pos_old = prev_position.xyz;	
 	vec3 vel = (pos - pos_old) / dt;
+	vec3 notNormalizednormal = calculateNormal(pos);
+	
 	float ks=0, kd=0;
 	int index = gl_VertexID;
 	int ix = index % texsize_x;
@@ -192,6 +200,7 @@ void main(void)
 		}
 	}
 	//sphereCollision(pos,ball_position,radius);
+	//F += Wind(notNormalizednormal, vec3(0,0,-0.1));
     vec3 acc = vec3(0);
 	if(m!=0)
 	   acc = F/m; 
@@ -203,6 +212,6 @@ void main(void)
 	to_gs_position_mass = vec4(pos, m);	
 	to_gs_prev_position = vec4(pos_old,m);	
 	to_gs_vertexID = gl_VertexID;
-	to_gs_vertexNormal = calculateNormal(pos);
+	to_gs_vertexNormal = normalize(notNormalizednormal);
 	gl_Position = MVP*vec4(pos, 1);
 }
