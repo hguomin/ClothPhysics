@@ -111,7 +111,7 @@ private:
 		SHEAR,
 		BEND
 	};
-	void FixSprings(std::vector<glm::ivec4>& springs, glm::ivec4& new_spring, glm::vec3 p1, glm::vec3 planeNormal, int index, int new_index, int direction, SPRING springType);
+	void FixSprings(std::vector<glm::ivec4>& springs, glm::ivec4& new_spring, trimesh::index_t face_above, trimesh::index_t face_below, int index, int new_index, int direction, SPRING springType);
 
 	void fillTriangles(std::vector< trimesh::triangle_t>& triang);
 };

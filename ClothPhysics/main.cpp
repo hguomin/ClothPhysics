@@ -230,8 +230,8 @@ int main(int argc, char ** argv[])
 			//gpuCloth.Draw(transform, camera);
 			if (cutOnce == false)
 			{
-				cloth2.Split(3, glm::vec3(0, 0, -1));
 				cloth2.Split(4, glm::vec3(0, 0, -1));
+				cloth2.Split(3, glm::vec3(0, 0, -1));
 				cloth2.Split(5, glm::vec3(0, 0, -1));
 				cutOnce = true;
 			}

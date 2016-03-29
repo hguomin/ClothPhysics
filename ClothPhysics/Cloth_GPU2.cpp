@@ -44,6 +44,8 @@ Cloth_GPU2::~Cloth_GPU2()
 	glDeleteBuffers(1, &vboID_Struct);
 	glDeleteBuffers(1, &vboID_Shear);
 	glDeleteBuffers(1, &vboID_Bend);
+
+	m_he_mesh.clear();
 }
 
 void Cloth_GPU2::Draw(const Transform& transform, const Camera& camera)
@@ -84,13 +86,23 @@ void Cloth_GPU2::fillTriangles(std::vector<trimesh::triangle_t>& triang)
 	}
 }
 
-void Cloth_GPU2::FixSprings(std::vector<glm::ivec4>& springs, glm::ivec4& new_spring, glm::vec3 p1, glm::vec3 planeNormal, int index, int new_index, int direction, SPRING springType)
+void Cloth_GPU2::FixSprings(std::vector<glm::ivec4>& springs, glm::ivec4& new_spring, trimesh::index_t face_above, trimesh::index_t face_below, int index, int new_index, int direction, SPRING springType)
 {
 	if (springs[index][direction] != -1)
 	{
 		glm::vec3 pos = glm::vec3(X[springs[index][direction]]);
-		bool above = isPointAbovePlane(pos, p1, planeNormal);
-		if (!above) //if the point is below the plane
+		bool is_below_cut = false;//isPointAbovePlane(pos, p1, planeNormal);
+		std::vector<trimesh::index_t> common_verts;
+
+		common_verts = m_he_mesh.common_vertices_for_faces(face_above, face_below);
+		
+		auto found = std::find(common_verts.cbegin(), common_verts.cend(), springs[index][direction]);
+		if (found == common_verts.cend())
+		{
+			is_below_cut = true;
+		}
+
+		if (is_below_cut) //if the point is below the plane
 		{
 			int temp = springs[index][direction];
 			springs[index][direction] = -1; //remove link to below plane
@@ -122,8 +134,7 @@ void Cloth_GPU2::FixSprings(std::vector<glm::ivec4>& springs, glm::ivec4& new_sp
 				break;
 			}
 			new_spring[reverse_dir] = -1;
-			//if we are in a struct, lets also remove the cut bend because we have the data ready
-			if (springType == SPRING::STRUCT)
+			if (springType == SPRING::BEND)
 			{
 				int bend_above = bend_springs[temp][reverse_dir];
 				bend_springs[temp][reverse_dir] = -1;
@@ -621,14 +632,22 @@ void Cloth_GPU2::Split(const unsigned int split_index, glm::vec3 planeNormal)
 		//Remapping the springs for the CUT particle
 		for (unsigned int direction = 0; direction < 4; direction++)
 		{
-			FixSprings(struct_springs, new_struct, p1, planeNormal, split_index, new_index, direction, SPRING::STRUCT);
-			FixSprings(shear_springs, new_shear, p1, planeNormal, split_index, new_index, direction, SPRING::SHEAR);
-			FixSprings(bend_springs, new_bend, p1, planeNormal, split_index, new_index, direction, SPRING::BEND);
+			for (const trimesh::index_t face_a : face_above)
+			{
+				for (const trimesh::index_t face_b : face_below)
+				{
+					FixSprings(struct_springs, new_struct, face_a,face_b, split_index, new_index, direction, SPRING::STRUCT);
+					FixSprings(shear_springs, new_shear, face_a,face_b,split_index, new_index, direction, SPRING::SHEAR);
+					FixSprings(bend_springs, new_bend, face_a,face_b,split_index, new_index, direction, SPRING::BEND);
+				}
+			}
 		}
-		shear_springs.push_back(new_shear);
+
+		
 		struct_springs.push_back(new_struct);
+		shear_springs.push_back(new_shear);
 		bend_springs.push_back(new_bend);
-		//now lets fix the indices for the triangles below the cutting point
+
 		m_he_mesh.split_vertex(split_index, face_above, face_below);
 	}
 	indices = m_he_mesh.get_indices();

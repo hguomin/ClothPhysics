@@ -44,6 +44,8 @@ namespace trimesh
 				next_he(-1),
 				ghost_he(-1)
 			{}
+
+			~halfedge_t() {};
 		};
 
 		// Builds the half-edge data structures from the given triangles and edges.
@@ -303,6 +305,30 @@ namespace trimesh
 		}
 
 		void split_vertex(index_t vertex_to_split, std::vector<index_t> faces_above, std::vector<index_t> faces_below);
+
+		void common_vertices_for_faces(std::vector<index_t>& ret, index_t face1, index_t face2) const
+		{
+			/* Untested */
+			ret.clear();
+			std::vector<index_t> vert1 = vertices_for_face(face1);
+			std::vector<index_t> vert2 = vertices_for_face(face2);
+			for (const index_t i : vert1)
+			{
+				auto found = std::find(vert2.cbegin(), vert2.cend(), i);
+				if (found != vert2.cend())
+				{
+					ret.push_back(i);
+				}
+			}
+		}
+
+		std::vector<index_t> common_vertices_for_faces(index_t face1, index_t face2) const
+		{
+			/* Untested */
+			std::vector<index_t> ret;
+			common_vertices_for_faces(ret, face1, face2);
+			return ret;
+		}
 
 		void get_indices(std::vector<index_t>& indices);
 		std::vector<unsigned short> get_indices();
