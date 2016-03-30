@@ -232,7 +232,7 @@ int main(int argc, char ** argv[])
 			{
 				cloth2.Split(4, glm::vec3(0, 0, -1));
 				cloth2.Split(3, glm::vec3(0, 0, -1));
-				cloth2.Split(0, glm::vec3(0, 0, -1));
+				cloth2.Split(5, glm::vec3(0, 0, -1));
 				cutOnce = true;
 			}
 			check_gl_error();
