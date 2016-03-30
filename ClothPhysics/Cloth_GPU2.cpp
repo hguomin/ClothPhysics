@@ -477,12 +477,13 @@ glm::ivec2 Cloth_GPU2::getNextNeighbor(int n) {
 void Cloth_GPU2::Split(const unsigned int split_index, glm::vec3 planeNormal)
 {
 	//collecting data from GPU
+	/*
 	glBindVertexArray(vaoUpdateID[writeID]);
 	glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, vboID_Pos[readID]); //current position
 	X = DEBUG::GetBufferData<glm::vec4>(GL_TRANSFORM_FEEDBACK_BUFFER, X.size());
 	glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 1, vboID_PrePos[readID]); //last position
 	X_last = DEBUG::GetBufferData<glm::vec4>(GL_TRANSFORM_FEEDBACK_BUFFER, X_last.size());
-
+	*/
 	glm::vec3 p1 = glm::vec3(X[split_index]);
 
 	vec neighs_triang;
@@ -554,39 +555,43 @@ void Cloth_GPU2::FixSprings(vec& faces_above, vec& faces_below, int index)
 void Cloth_GPU2::FixStructSprings(const vec & vertices_below, int index)
 {
 	glm::ivec4 new_spring;
-	new_spring = SplitSpring(struct_springs[index], vertices_below);
+	new_spring = SplitSpring(struct_springs, index, vertices_below);
 	struct_springs.push_back(new_spring);
 }
 
 void Cloth_GPU2::FixShearSprings(const vec & vertices_below, int index)
 {
 	glm::ivec4 new_spring;
-	new_spring = SplitSpring(shear_springs[index], vertices_below);
+	new_spring = SplitSpring(shear_springs,index, vertices_below);
 	shear_springs.push_back(new_spring);
 }
 
 void Cloth_GPU2::FixBendSprings(const vec & vertices_below, int index)
 {
 	glm::ivec4 new_spring;
-	new_spring = SplitSpring(bend_springs[index], vertices_below);
+	new_spring = SplitSpring(bend_springs, index, vertices_below);
 	bend_springs.push_back(new_spring);
 	/*TODO: Cut bend springs*/
 }
 
-glm::ivec4 Cloth_GPU2::SplitSpring(glm::ivec4 & spring_to_split, vec indexes_to_remove_from_original)
+glm::ivec4 Cloth_GPU2::SplitSpring(std::vector<glm::ivec4>& springs, trimesh::index_t split_index, vec indexes_to_remove_from_original)
 {
-	glm::ivec4 new_spring = spring_to_split;
-	for each (trimesh::index_t index in indexes_to_remove_from_original)
+	glm::ivec4 old_spring = springs[split_index];
+	glm::ivec4 new_spring = old_spring;
+	for each (trimesh::index_t remove_index in indexes_to_remove_from_original)
 	{
 		for (size_t i = 0; i < 4; i++)
 		{
-			if (spring_to_split[i] == index)
+			if (old_spring[i] == remove_index)
 			{
-				spring_to_split[i] = -1;
-				new_spring[getReverseDirection(i)] = -1;
+				int reverse_dir = getReverseDirection(i);
+				springs[remove_index][reverse_dir] = springs.size();
+				old_spring[i] = -1;
+				new_spring[reverse_dir] = -1;
 			}
 		}
 	}
+	springs[split_index] = old_spring;
 	return new_spring;
 }
 
@@ -645,8 +650,15 @@ std::vector<trimesh::index_t> Cloth_GPU2::getVertices(vec faces)
 
 bool Cloth_GPU2::isPointAbovePlane(glm::vec3 p1, glm::vec3 pointOnPlane, glm::vec3 planeNormal)
 {
-	float cosTheta = glm::dot(p1 - pointOnPlane, planeNormal);
-	if (cosTheta >= 0)
+	glm::vec3 diff = p1 - pointOnPlane;
+	//rounding
+
+	diff.x = floorf(diff.x * 1000) / 1000;
+	diff.y = floorf(diff.y * 1000) / 1000;
+	diff.z = floorf(diff.z * 1000) / 1000;
+	
+	float cosTheta = glm::dot(diff, planeNormal);
+	if (cosTheta > 0.001)
 	{
 		return true;
 	}
