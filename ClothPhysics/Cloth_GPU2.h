@@ -27,6 +27,8 @@ private:
 	void setupTransformFeedback();
 
 	void Simulate(glm::mat4 MVP);
+	void UpdatePositionsFromGPU();
+	void UpdateGPUAfterCut();
 	void massSpringShader_UploadData(glm::mat4 MVP);
 
 

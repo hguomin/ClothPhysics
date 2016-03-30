@@ -182,25 +182,25 @@ void Cloth_GPU2::Simulate(glm::mat4 MVP)
 	check_gl_error();
 	for (int i = 0;i<NUM_ITER;i++) {
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_BUFFER, texPosID[writeID]);
-		glBindBuffer(GL_ARRAY_BUFFER, vboID_Pos[writeID]);
+		glBindTexture(GL_TEXTURE_BUFFER, texPosID[readID]);
+		glBindBuffer(GL_ARRAY_BUFFER, vboID_Pos[readID]);
 		
 		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_BUFFER, texPrePosID[writeID]);
-		glBindBuffer(GL_ARRAY_BUFFER, vboID_PrePos[writeID]);
+		glBindTexture(GL_TEXTURE_BUFFER, texPrePosID[readID]);
+		glBindBuffer(GL_ARRAY_BUFFER, vboID_PrePos[readID]);
 
-		glBindVertexArray(vaoUpdateID[writeID]);
-		glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, vboID_Pos[readID]); //glBufferData(GL_TRANSFORM_FEEDBACK_BUFFER, X.size()*sizeof(glm::vec4), &X[0].x, GL_DYNAMIC_COPY);
-		glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 1, vboID_PrePos[readID]); //glBufferData(GL_TRANSFORM_FEEDBACK_BUFFER, X_last.size()*sizeof(glm::vec4), &X_last[0].x, GL_DYNAMIC_COPY);
+		glBindVertexArray(vaoUpdateID[readID]);
+
+		glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, vboID_Pos[writeID]); //glBufferData(GL_TRANSFORM_FEEDBACK_BUFFER, X.size()*sizeof(glm::vec4), &X[0].x, GL_DYNAMIC_COPY);
+		glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 1, vboID_PrePos[writeID]); //glBufferData(GL_TRANSFORM_FEEDBACK_BUFFER, X_last.size()*sizeof(glm::vec4), &X_last[0].x, GL_DYNAMIC_COPY);
 		glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 2, vboID_Normal);
 		
-		glEnable(GL_RASTERIZER_DISCARD); //disable rasterization because of transformfeedback calculations
+		//disable rasterization because of transformfeedback calculations
+		glEnable(GL_RASTERIZER_DISCARD); 
 
-		// begin computation
 		glBeginTransformFeedback(GL_POINTS);
 		glDrawArrays(GL_POINTS, 0, current_points);
 		glEndTransformFeedback();
-		//end computation
 
 		check_gl_error();
 		
@@ -210,6 +210,19 @@ void Cloth_GPU2::Simulate(glm::mat4 MVP)
 		std::swap(readID, writeID);
 	}
 	massSpringShader.UnUse();
+}
+
+void Cloth_GPU2::UpdatePositionsFromGPU()
+{
+	glBindVertexArray(vaoUpdateID[writeID]);
+	glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, vboID_Pos[readID]); //current position
+	X = DEBUG::GetBufferData<glm::vec4>(GL_TRANSFORM_FEEDBACK_BUFFER, X.size());
+	glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 1, vboID_PrePos[readID]); //last position
+	X_last = DEBUG::GetBufferData<glm::vec4>(GL_TRANSFORM_FEEDBACK_BUFFER, X_last.size());
+}
+
+void Cloth_GPU2::UpdateGPUAfterCut()
+{
 }
 
 void Cloth_GPU2::massSpringShader_UploadData(glm::mat4 MVP)
@@ -472,6 +485,7 @@ glm::ivec2 Cloth_GPU2::getNextNeighbor(int n) {
 void Cloth_GPU2::Split(const unsigned int split_index, glm::vec3 planeNormal)
 {
 	//collecting data from GPU
+	UpdatePositionsFromGPU();
 	/*
 	glBindVertexArray(vaoUpdateID[writeID]);
 	glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, vboID_Pos[readID]); //current position
@@ -526,6 +540,8 @@ void Cloth_GPU2::Split(const unsigned int split_index, glm::vec3 planeNormal)
 	}
 	indices = m_he_mesh.get_indices();
 	num_indices = indices.size();
+
+	UpdateGPUAfterCut();
 }
 
 void Cloth_GPU2::FixSprings(vec& faces_above, vec& faces_below, int split_index)
