@@ -83,43 +83,41 @@ void Cloth_GPU2::createVBO()
 	
 	glGenTextures(2, texPosID);
 	glGenTextures(2, texPrePosID);
-
-	unsigned int max_vertices = 3 * X.size();
 	
 	//set update vao
 	for (unsigned int i = 0; i < 2; i++)
 	{
 		glBindVertexArray(vaoUpdateID[i]);
 		glBindBuffer(GL_ARRAY_BUFFER, vboID_Pos[i]);
-		glBufferData(GL_ARRAY_BUFFER, max_vertices*sizeof(glm::vec4), &X[0].x, GL_DYNAMIC_COPY);
+		glBufferData(GL_ARRAY_BUFFER, maximum_split_points*sizeof(glm::vec4), &X[0].x, GL_DYNAMIC_COPY);
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
 		
 		glBindBuffer(GL_ARRAY_BUFFER, vboID_PrePos[i]);
-		glBufferData(GL_ARRAY_BUFFER, max_vertices*sizeof(glm::vec4), &X_last[0].x, GL_DYNAMIC_COPY);
+		glBufferData(GL_ARRAY_BUFFER, maximum_split_points*sizeof(glm::vec4), &X_last[0].x, GL_DYNAMIC_COPY);
 		glEnableVertexAttribArray(1);
 		glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, 0);
 
 		glBindBuffer(GL_ARRAY_BUFFER, vboID_Struct);
-		glBufferData(GL_ARRAY_BUFFER, max_vertices*sizeof(glm::ivec4), &struct_springs[0].x, GL_STATIC_READ);
+		glBufferData(GL_ARRAY_BUFFER, maximum_split_points*sizeof(glm::ivec4), &struct_springs[0].x, GL_STATIC_READ);
 		glEnableVertexAttribArray(2);
 		glVertexAttribIPointer(2, 4, GL_INT,  0, 0);
 		check_gl_error();
 
 		glBindBuffer(GL_ARRAY_BUFFER, vboID_Shear);
-		glBufferData(GL_ARRAY_BUFFER, max_vertices*sizeof(glm::ivec4), &shear_springs[0].x, GL_STATIC_READ);
+		glBufferData(GL_ARRAY_BUFFER, maximum_split_points*sizeof(glm::ivec4), &shear_springs[0].x, GL_STATIC_READ);
 		glEnableVertexAttribArray(3);
 		glVertexAttribIPointer(3, 4, GL_INT,  0, 0);
 		check_gl_error();
 
 		glBindBuffer(GL_ARRAY_BUFFER, vboID_Bend);
-		glBufferData(GL_ARRAY_BUFFER, max_vertices*sizeof(glm::ivec4), &bend_springs[0].x, GL_STATIC_READ);
+		glBufferData(GL_ARRAY_BUFFER, maximum_split_points*sizeof(glm::ivec4), &bend_springs[0].x, GL_STATIC_READ);
 		glEnableVertexAttribArray(4);
 		glVertexAttribIPointer(4, 4, GL_INT, 0, 0);
 		check_gl_error();
 
 		glBindBuffer(GL_ARRAY_BUFFER, vboID_Normal);
-		glBufferData(GL_ARRAY_BUFFER, 3* max_vertices*sizeof(glm::vec3), nullptr, GL_STATIC_READ);
+		glBufferData(GL_ARRAY_BUFFER, maximum_split_points*sizeof(glm::vec3), nullptr, GL_STATIC_READ);
 		glEnableVertexAttribArray(5);
 		glVertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, 0, 0);
 		
@@ -140,7 +138,7 @@ void Cloth_GPU2::createVBO()
 			
 		}
 		glBindBuffer(GL_ARRAY_BUFFER, vboID_TexCoord);
-		glBufferData(GL_ARRAY_BUFFER, Tex_coord.size()*sizeof(glm::vec2), &Tex_coord[0], GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, maximum_split_points*sizeof(glm::vec2), &Tex_coord[0], GL_STATIC_DRAW);
 		glEnableVertexAttribArray(1);
 		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, 0);
 
@@ -192,13 +190,10 @@ void Cloth_GPU2::Simulate(glm::mat4 MVP)
 		glBindBuffer(GL_ARRAY_BUFFER, vboID_PrePos[writeID]);
 
 		glBindVertexArray(vaoUpdateID[writeID]);
-		glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, vboID_Pos[readID]);
-		glBufferData(GL_TRANSFORM_FEEDBACK_BUFFER, X.size()*sizeof(glm::vec4), &X[0].x, GL_DYNAMIC_COPY);
-
-		glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 1, vboID_PrePos[readID]);
-		glBufferData(GL_TRANSFORM_FEEDBACK_BUFFER, X_last.size()*sizeof(glm::vec4), &X_last[0].x, GL_DYNAMIC_COPY);
-
+		glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, vboID_Pos[readID]); //glBufferData(GL_TRANSFORM_FEEDBACK_BUFFER, X.size()*sizeof(glm::vec4), &X[0].x, GL_DYNAMIC_COPY);
+		glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 1, vboID_PrePos[readID]); //glBufferData(GL_TRANSFORM_FEEDBACK_BUFFER, X_last.size()*sizeof(glm::vec4), &X_last[0].x, GL_DYNAMIC_COPY);
 		glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 2, vboID_Normal);
+		
 		glEnable(GL_RASTERIZER_DISCARD); //disable rasterization because of transformfeedback calculations
 
 		// begin computation
@@ -210,7 +205,7 @@ void Cloth_GPU2::Simulate(glm::mat4 MVP)
 		check_gl_error();
 		
 		glFlush();
-		glDisable(GL_RASTERIZER_DISCARD); //enable rasterization again
+		glDisable(GL_RASTERIZER_DISCARD);
 
 		std::swap(readID, writeID);
 	}
@@ -524,7 +519,7 @@ void Cloth_GPU2::Split(const unsigned int split_index, glm::vec3 planeNormal)
 		X_last.push_back(prev_split_pos);
 		Tex_coord.push_back(tex);
 		current_points++;
-		//Remapping the springs for the CUT particle
+
 		FixSprings(face_above,face_below, split_index);
 		
 		m_he_mesh.split_vertex(split_index, face_above, face_below);
@@ -570,21 +565,25 @@ void Cloth_GPU2::FixBendSprings(const vec & vertices_below, int split_index)
 	glm::ivec4 new_spring;
 	new_spring = SplitSpring(bend_springs, split_index, vertices_below);
 	bend_springs.push_back(new_spring);
-	/*TODO: Cut bend springs*/
-	int split_column = split_index / points_y;
-	int above = split_index - points_x;
-	int left = split_index - 1;
-	if (above >= 0)
+
+	int split_row = split_index / points_y;
+	int split_column = split_index % points_y;
+	for each (trimesh::index_t vert_b in vertices_below)
 	{
-		int temp_index = bend_springs[above][DOWN];
-		bend_springs[above][DOWN] = -1;
-		bend_springs[temp_index][UP] = -1;
-	}
-	if ((left / points_y) == split_column )
-	{
-		int temp_index = bend_springs[left][RIGHT];
-		bend_springs[left][RIGHT] = -1;
-		bend_springs[temp_index][LEFT] = -1;
+		int vert_row = vert_b / points_y;
+		int vert_column = vert_b % points_y;
+		if (vert_column == split_column)
+		{
+			int temp = bend_springs[vert_b][UP];
+			bend_springs[vert_b][UP] = -1;
+			bend_springs[temp][DOWN] = -1;
+		}
+		if (vert_row == split_row)
+		{
+			int temp = bend_springs[vert_b][LEFT];
+			bend_springs[vert_b][LEFT] = -1;
+			bend_springs[temp][RIGHT] = -1;
+		}
 	}
 }
 
