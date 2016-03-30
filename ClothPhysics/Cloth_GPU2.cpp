@@ -533,45 +533,59 @@ void Cloth_GPU2::Split(const unsigned int split_index, glm::vec3 planeNormal)
 	num_indices = indices.size();
 }
 
-void Cloth_GPU2::FixSprings(vec& faces_above, vec& faces_below, int index)
+void Cloth_GPU2::FixSprings(vec& faces_above, vec& faces_below, int split_index)
 {
 	std::vector<trimesh::index_t> common_verts;
 	std::vector<trimesh::index_t> vertices_below;
-	vec nearby_vertices = m_he_mesh.vertex_vertex_neighbors(index);
+	vec nearby_vertices = m_he_mesh.vertex_vertex_neighbors(split_index);
 	common_verts = getCommonVertices(faces_above, faces_below);
 	vertices_below = getVertices(faces_below);
 
 	for each(trimesh::index_t vert in common_verts)
 	{
-		//remove common_verts from vertices_below
 		vertices_below.erase(std::remove(vertices_below.begin(), vertices_below.end(), vert), vertices_below.end());
 	}
 
-	FixStructSprings(vertices_below, index);
-	FixShearSprings(vertices_below, index);
-	FixBendSprings(vertices_below, index);
+	FixStructSprings(vertices_below, split_index);
+	FixShearSprings(vertices_below, split_index);
+	FixBendSprings(vertices_below, split_index);
 }
 
-void Cloth_GPU2::FixStructSprings(const vec & vertices_below, int index)
+void Cloth_GPU2::FixStructSprings(const vec & vertices_below, int split_index)
 {
 	glm::ivec4 new_spring;
-	new_spring = SplitSpring(struct_springs, index, vertices_below);
+	new_spring = SplitSpring(struct_springs, split_index, vertices_below);
 	struct_springs.push_back(new_spring);
 }
 
-void Cloth_GPU2::FixShearSprings(const vec & vertices_below, int index)
+void Cloth_GPU2::FixShearSprings(const vec & vertices_below, int split_index)
 {
 	glm::ivec4 new_spring;
-	new_spring = SplitSpring(shear_springs,index, vertices_below);
+	new_spring = SplitSpring(shear_springs, split_index, vertices_below);
 	shear_springs.push_back(new_spring);
 }
 
-void Cloth_GPU2::FixBendSprings(const vec & vertices_below, int index)
+void Cloth_GPU2::FixBendSprings(const vec & vertices_below, int split_index)
 {
 	glm::ivec4 new_spring;
-	new_spring = SplitSpring(bend_springs, index, vertices_below);
+	new_spring = SplitSpring(bend_springs, split_index, vertices_below);
 	bend_springs.push_back(new_spring);
 	/*TODO: Cut bend springs*/
+	int split_column = split_index / points_y;
+	int above = split_index - points_x;
+	int left = split_index - 1;
+	if (above >= 0)
+	{
+		int temp_index = bend_springs[above][DOWN];
+		bend_springs[above][DOWN] = -1;
+		bend_springs[temp_index][UP] = -1;
+	}
+	if ((left / points_y) == split_column )
+	{
+		int temp_index = bend_springs[left][RIGHT];
+		bend_springs[left][RIGHT] = -1;
+		bend_springs[temp_index][LEFT] = -1;
+	}
 }
 
 glm::ivec4 Cloth_GPU2::SplitSpring(std::vector<glm::ivec4>& springs, trimesh::index_t split_index, vec indexes_to_remove_from_original)
