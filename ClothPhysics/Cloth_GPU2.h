@@ -9,6 +9,7 @@
 class Cloth_GPU2
 {
 public:
+	typedef std::vector<trimesh::index_t> vec;
 	Cloth_GPU2();
 	~Cloth_GPU2();
 
@@ -111,8 +112,14 @@ private:
 		SHEAR,
 		BEND
 	};
-	void FixSprings(std::vector<glm::ivec4>& springs, glm::ivec4& new_spring, trimesh::index_t face_above, trimesh::index_t face_below, int index, int new_index, int direction, SPRING springType);
-
+	void FixSprings(vec& faces_above, vec& faces_below, int index, int new_index);
+	void FixStructSprings(const vec& common_vertices, const vec& vertices_below, int index, int new_index);
+	void FixShearSprings(const vec& common_vertices, const vec& vertices_below, int index, int new_index);
+	void FixBendSprings(const vec& common_vertices, const vec& vertices_below, int index, int new_index);
+	glm::ivec4 SplitSpring(glm::ivec4& spring_to_split, vec indexes_to_remove_from_original);
+	unsigned int getReverseDirection(unsigned int direction);
+	vec getCommonVertices(vec faces_above, vec faces_below);
+	vec getVerticesBelow(vec faces_below);
 	void fillTriangles(std::vector< trimesh::triangle_t>& triang);
 };
 

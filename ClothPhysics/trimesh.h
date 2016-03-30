@@ -241,6 +241,21 @@ namespace trimesh
 				if (hei == start_hei) break;
 			}
 		}
+		void vertex_face_neighbors_quad(const index_t vertex_index, std::vector< index_t >& result) const
+		{
+			/*Untested*/
+			vertex_face_neighbors(vertex_index, result);
+			auto min_face = std::min_element(result.begin(), result.end());
+			auto max_face = std::max_element(result.begin(), result.end());
+			if (*min_face != 0)
+			{
+				result.push_back(*min_face - 1);
+			}
+			if (*max_face != m_face_halfedges.size()-1)
+			{
+				result.push_back(*max_face + 1);
+			}
+		}
 		void vertex_face_neighbors_ignore_holes(const index_t vertex_index, std::vector<index_t>& result) const
 		{
 			/*

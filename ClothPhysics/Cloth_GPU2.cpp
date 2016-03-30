@@ -86,62 +86,114 @@ void Cloth_GPU2::fillTriangles(std::vector<trimesh::triangle_t>& triang)
 	}
 }
 
-void Cloth_GPU2::FixSprings(std::vector<glm::ivec4>& springs, glm::ivec4& new_spring, trimesh::index_t face_above, trimesh::index_t face_below, int index, int new_index, int direction, SPRING springType)
+void Cloth_GPU2::FixSprings(vec& faces_above, vec& faces_below, int index, int new_index)
 {
-	if (springs[index][direction] != -1)
+	std::vector<trimesh::index_t> common_verts;
+	std::vector<trimesh::index_t> vertices_below;
+	vec nearby_vertices = m_he_mesh.vertex_vertex_neighbors(index);
+	common_verts = getCommonVertices(faces_above, faces_below);
+	vertices_below = getVerticesBelow(faces_below);
+
+	for each(trimesh::index_t vert in common_verts)
 	{
-		glm::vec3 pos = glm::vec3(X[springs[index][direction]]);
-		bool is_below_cut = false;//isPointAbovePlane(pos, p1, planeNormal);
-		std::vector<trimesh::index_t> common_verts;
+		vertices_below.erase(std::remove(vertices_below.begin(),vertices_below.end(),vert),vertices_below.end());
+	}
 
-		common_verts = m_he_mesh.common_vertices_for_faces(face_above, face_below);
-		
-		auto found = std::find(common_verts.cbegin(), common_verts.cend(), springs[index][direction]);
-		if (found == common_verts.cend())
-		{
-			is_below_cut = true;
-		}
+	FixStructSprings(common_verts, vertices_below, index, new_index);
+	FixShearSprings(common_verts, vertices_below, index, new_index);
+	FixBendSprings(common_verts, vertices_below, index, new_index);
+}
 
-		if (is_below_cut) //if the point is below the plane
+void Cloth_GPU2::FixStructSprings(const vec & common_vertices, const vec & vertices_below, int index, int new_index)
+{
+	glm::ivec4 new_spring;
+	new_spring = SplitSpring(struct_springs[index], vertices_below);
+	struct_springs.push_back(new_spring);
+}
+
+void Cloth_GPU2::FixShearSprings(const vec & common_vertices, const vec & vertices_below, int index, int new_index)
+{
+	glm::ivec4 new_spring;
+	new_spring = SplitSpring(shear_springs[index], vertices_below);
+	shear_springs.push_back(new_spring);
+}
+
+void Cloth_GPU2::FixBendSprings(const vec & common_vertices, const vec & vertices_below, int index, int new_index)
+{
+	glm::ivec4 new_spring;
+	new_spring = SplitSpring(bend_springs[index], vertices_below);
+	bend_springs.push_back(new_spring);
+	/*TODO: Cut bend springs*/
+}
+
+glm::ivec4 Cloth_GPU2::SplitSpring(glm::ivec4 & spring_to_split, vec indexes_to_remove_from_original)
+{
+	glm::ivec4 new_spring = spring_to_split;
+	for each (trimesh::index_t index in indexes_to_remove_from_original)
+	{
+		for (size_t i = 0; i < 4; i++)
 		{
-			int temp = springs[index][direction];
-			springs[index][direction] = -1; //remove link to below plane
-			for (int j = 0; j < 4; j++)
+			if (spring_to_split[i] == index)
 			{
-				if (springs[temp][j] == index)
-				{
-					springs[temp][j] = new_index;
-				}
-			}
-			new_spring[direction] = temp;
-			//remap so that we don't use the opposite
-			int reverse_dir;
-			switch (direction) //shear springs use the same winding, so the opposite is at the same position as for a struct/bend string
-			{
-			case(UP) :
-				reverse_dir = DOWN;
-				break;
-			case(DOWN) :
-				reverse_dir = UP;
-				break;
-			case(LEFT) :
-				reverse_dir = RIGHT;
-				break;
-			case(RIGHT) :
-				reverse_dir = LEFT;
-				break;
-			default:
-				break;
-			}
-			new_spring[reverse_dir] = -1;
-			if (springType == SPRING::BEND)
-			{
-				int bend_above = bend_springs[temp][reverse_dir];
-				bend_springs[temp][reverse_dir] = -1;
-				bend_springs[bend_above][direction] = -1;
+				spring_to_split[i] = -1;
+				new_spring[getReverseDirection(i)] = -1;
 			}
 		}
 	}
+	return new_spring;
+}
+
+unsigned int Cloth_GPU2::getReverseDirection(unsigned int direction)
+{
+	unsigned int reverse_dir;
+	switch (direction) //shear springs use the same winding, so the opposite is at the same position as for a struct/bend string
+	{
+	case(UP) :
+		reverse_dir = DOWN;
+		break;
+	case(DOWN) :
+		reverse_dir = UP;
+		break;
+	case(LEFT) :
+		reverse_dir = RIGHT;
+		break;
+	case(RIGHT) :
+		reverse_dir = LEFT;
+		break;
+	default:
+		break;
+	}
+	return reverse_dir;
+}
+
+std::vector<trimesh::index_t> Cloth_GPU2::getCommonVertices(vec faces_above, vec faces_below)
+{
+	vec common_verts;
+	for each (trimesh::index_t faceA in faces_above)
+	{
+		for each (trimesh::index_t faceB in faces_below)
+		{
+			vec temp = m_he_mesh.common_vertices_for_faces(faceA, faceB);
+			common_verts.insert(common_verts.cend(), temp.cbegin(), temp.cend());
+		}
+	}
+	std::sort(common_verts.begin(), common_verts.end());
+	common_verts.erase(std::unique(common_verts.begin(), common_verts.end()),
+		common_verts.end());
+	return common_verts;
+}
+
+std::vector<trimesh::index_t> Cloth_GPU2::getVerticesBelow(vec faces_below)
+{
+	vec vertices_below;
+	for each (trimesh::index_t faceB in faces_below)
+	{
+		vec temp = m_he_mesh.vertices_for_face(faceB);
+		vertices_below.insert(vertices_below.cend(), temp.cbegin(), temp.cend());
+	}
+	std::sort(vertices_below.begin(), vertices_below.end());
+	vertices_below.erase(std::unique(vertices_below.begin(), vertices_below.end()), vertices_below.end());
+	return vertices_below;
 }
 
 bool Cloth_GPU2::isPointAbovePlane(glm::vec3 p1, glm::vec3 pointOnPlane, glm::vec3 planeNormal)
@@ -576,12 +628,12 @@ void Cloth_GPU2::Split(const unsigned int split_index, glm::vec3 planeNormal)
 	*  - - *  - - *
 	*/
 	//get the triangle neighbours of the splitting index
-	std::vector<trimesh::index_t> neighs_triang;
-	m_he_mesh.vertex_face_neighbors(split_index, neighs_triang);
+	vec neighs_triang;
+	m_he_mesh.vertex_face_neighbors_quad(split_index, neighs_triang);
 
 	std::vector<glm::vec3> triangle_center;
-	std::vector<trimesh::index_t> face_above;
-	std::vector<trimesh::index_t> face_below;
+	vec face_above;
+	vec face_below;
 
 	glm::vec3 p1 = glm::vec3(X[split_index]);
 
@@ -590,7 +642,7 @@ void Cloth_GPU2::Split(const unsigned int split_index, glm::vec3 planeNormal)
 	//need both one triangle above the cutt point as well as one below to be able to split
 	for each (trimesh::index_t face in neighs_triang)
 	{
-		std::vector<trimesh::index_t> triangle_vertices = m_he_mesh.vertices_for_face(face);
+		vec triangle_vertices = m_he_mesh.vertices_for_face(face);
 		glm::vec3 point1 = glm::vec3(X[triangle_vertices[0]]);
 		glm::vec3 point2 = glm::vec3(X[triangle_vertices[1]]);
 		glm::vec3 point3 = glm::vec3(X[triangle_vertices[2]]);
@@ -626,27 +678,15 @@ void Cloth_GPU2::Split(const unsigned int split_index, glm::vec3 planeNormal)
 		Tex_coord.push_back(tex);
 		splitAdded = false;
 		//for spring calculations
-		glm::ivec4 new_shear(-1);
-		glm::ivec4 new_struct = struct_springs[split_index];
-		glm::ivec4 new_bend = bend_springs[split_index];
+		//glm::ivec4 new_shear(-1);
+		//glm::ivec4 new_struct = struct_springs[split_index];
+		//glm::ivec4 new_bend = bend_springs[split_index];
 		//Remapping the springs for the CUT particle
-		for (unsigned int direction = 0; direction < 4; direction++)
-		{
-			for (const trimesh::index_t face_a : face_above)
-			{
-				for (const trimesh::index_t face_b : face_below)
-				{
-					FixSprings(struct_springs, new_struct, face_a,face_b, split_index, new_index, direction, SPRING::STRUCT);
-					FixSprings(shear_springs, new_shear, face_a,face_b,split_index, new_index, direction, SPRING::SHEAR);
-					FixSprings(bend_springs, new_bend, face_a,face_b,split_index, new_index, direction, SPRING::BEND);
-				}
-			}
-		}
-
+		FixSprings(face_above,face_below, split_index, new_index);
 		
-		struct_springs.push_back(new_struct);
-		shear_springs.push_back(new_shear);
-		bend_springs.push_back(new_bend);
+		//struct_springs.push_back(new_struct);
+		//shear_springs.push_back(new_shear);
+		//bend_springs.push_back(new_bend);
 
 		m_he_mesh.split_vertex(split_index, face_above, face_below);
 	}
