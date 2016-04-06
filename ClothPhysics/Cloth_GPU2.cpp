@@ -216,13 +216,55 @@ void Cloth_GPU2::UpdatePositionsFromGPU()
 {
 	glBindVertexArray(vaoUpdateID[writeID]);
 	glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, vboID_Pos[readID]); //current position
-	X = DEBUG::GetBufferData<glm::vec4>(GL_TRANSFORM_FEEDBACK_BUFFER, X.size());
+	X = HELPER::GetBufferData<glm::vec4>(GL_TRANSFORM_FEEDBACK_BUFFER, X.size());
 	glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 1, vboID_PrePos[readID]); //last position
-	X_last = DEBUG::GetBufferData<glm::vec4>(GL_TRANSFORM_FEEDBACK_BUFFER, X_last.size());
+	X_last = HELPER::GetBufferData<glm::vec4>(GL_TRANSFORM_FEEDBACK_BUFFER, X_last.size());
 }
 
+///Do not use not working at the moment
 void Cloth_GPU2::UpdateGPUAfterCut()
 {
+	for (size_t i = 0; i < 2; i++)
+	{
+		glBindVertexArray(vaoUpdateID[i]);
+		HELPER::PushBufferData(GL_ARRAY_BUFFER,	vboID_Pos[i], X, X.size());
+		HELPER::PushBufferData(GL_ARRAY_BUFFER, vboID_PrePos[i], X_last, X_last.size());
+
+		HELPER::PushBufferData(GL_ARRAY_BUFFER, vboID_Struct, struct_springs, struct_springs.size());
+		HELPER::PushBufferData(GL_ARRAY_BUFFER, vboID_Shear, shear_springs, shear_springs.size());
+		HELPER::PushBufferData(GL_ARRAY_BUFFER, vboID_Bend, bend_springs, bend_springs.size());
+	}
+	HELPER::PushBufferData(GL_ELEMENT_ARRAY_BUFFER, vboID_Indices, indices, indices.size());
+
+	GLint length;
+	glGetBufferParameteriv(GL_ARRAY_BUFFER, GL_BUFFER_SIZE, &length);
+	GLint realSize = length / sizeof(glm::vec4);
+
+	std::vector<glm::vec4> temp = HELPER::GetBufferData<glm::vec4>(GL_ARRAY_BUFFER, realSize);
+	/*
+	for (size_t i = 0; i < 2; i++)
+	{
+		check_gl_error();
+		glBindVertexArray(vaoUpdateID[readID]);
+		glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, vboID_Pos[i]);
+		HELPER::PushBufferData(GL_TRANSFORM_FEEDBACK_BUFFER, &X, X.size());
+		check_gl_error();
+		glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 1, vboID_PrePos[i]);
+		HELPER::PushBufferData(GL_TRANSFORM_FEEDBACK_BUFFER, &X_last, X_last.size());
+		check_gl_error();
+		glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 2, vboID_Struct);
+		HELPER::PushBufferData(GL_TRANSFORM_FEEDBACK_BUFFER, &struct_springs, struct_springs.size());
+		check_gl_error();
+		glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 3, vboID_Shear);
+		HELPER::PushBufferData(GL_TRANSFORM_FEEDBACK_BUFFER, &shear_springs, shear_springs.size());
+		check_gl_error();
+		glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 4, vboID_Bend);
+		HELPER::PushBufferData(GL_TRANSFORM_FEEDBACK_BUFFER, &bend_springs, bend_springs.size());
+		check_gl_error();
+	}
+	
+	//HELPER::PushBufferData(GL_ELEMENT_ARRAY_BUFFER, &indices, indices.size());
+	*/
 }
 
 void Cloth_GPU2::massSpringShader_UploadData(glm::mat4 MVP)
@@ -367,7 +409,7 @@ void Cloth_GPU2::fillTriangles(std::vector<trimesh::triangle_t>& triang)
 {
 	triang.resize(indices.size() / 3);
 	int count = 0;
-	for (int i = 0; i < indices.size(); i++)
+	for (unsigned int i = 0; i < indices.size(); i++)
 	{
 		triang[count].v[0] = indices[i];
 		i++;
@@ -541,6 +583,7 @@ void Cloth_GPU2::Split(const unsigned int split_index, glm::vec3 planeNormal)
 	indices = m_he_mesh.get_indices();
 	num_indices = indices.size();
 
+	check_gl_error();
 	UpdateGPUAfterCut();
 }
 
