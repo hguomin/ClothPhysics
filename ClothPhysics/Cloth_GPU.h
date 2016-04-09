@@ -31,9 +31,21 @@ private:
 	void UpdateGPUAfterCut();
 	void massSpringShader_UploadData(glm::mat4 MVP);
 
+	bool isPointAbovePlane(glm::vec3 p1, glm::vec3 pointOnPlane, glm::vec3 planeNormal);
+
+	void FixSprings(vec& faces_above, vec& faces_below, int split_index);
+	void FixStructSprings(const vec& vertices_below, int split_index);
+	void FixShearSprings(const vec& vertices_below, int split_index);
+	void FixBendSprings(const vec& vertices_below, int split_index);
+
+	glm::ivec4 SplitSpring(std::vector<glm::ivec4>& springs, trimesh::index_t split_index, vec indexes_to_remove_from_original);
+	unsigned int getReverseDirection(unsigned int direction);
+
+	vec getCommonVertices(vec faces_above, vec faces_below);
+	vec getVertices(vec faces);
+	void fillTriangles(std::vector< trimesh::triangle_t>& triang);
 
 	Basic_Shader massSpringShader;
-	Basic_Shader splitShader;
 	Phong_Shader renderShader;
 
 	enum
@@ -46,6 +58,12 @@ private:
 		UP_LEFT = 1,
 		DOWN_LEFT = 2,
 		DOWN_RIGHT = 3,
+	};
+	enum SPRING
+	{
+		STRUCT,
+		SHEAR,
+		BEND
 	};
 
 	const int points_x = 75;
@@ -98,7 +116,6 @@ private:
 	GLuint vboID_Pos[2];
 	GLuint vboID_PrePos[2];
 	GLuint vboID_Struct, vboID_Shear, vboID_Bend;
-
 	GLuint vboID_Normal;
 	GLuint vboID_TexCoord;
 
@@ -106,22 +123,5 @@ private:
 	
 	GLuint texPosID[2];
 	GLuint texPrePosID[2];
-
-	bool isPointAbovePlane(glm::vec3 p1, glm::vec3 pointOnPlane, glm::vec3 planeNormal);
-	enum SPRING
-	{
-		STRUCT,
-		SHEAR,
-		BEND
-	};
-	void FixSprings(vec& faces_above, vec& faces_below, int split_index);
-	void FixStructSprings(const vec& vertices_below, int split_index);
-	void FixShearSprings(const vec& vertices_below, int split_index);
-	void FixBendSprings(const vec& vertices_below, int split_index);
-	glm::ivec4 SplitSpring(std::vector<glm::ivec4>& springs, trimesh::index_t split_index, vec indexes_to_remove_from_original);
-	unsigned int getReverseDirection(unsigned int direction);
-	vec getCommonVertices(vec faces_above, vec faces_below);
-	vec getVertices(vec faces);
-	void fillTriangles(std::vector< trimesh::triangle_t>& triang);
 };
 
