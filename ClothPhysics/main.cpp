@@ -16,7 +16,7 @@
 int main(int argc, char ** argv[])
 {
 	std::cout << "Init started" << std::endl;
-	Display display(800, 600, "TSBK07 Space");
+	Display display(800, 600, "TSBK03 Cloth Simulation");
 	
 	Texture texture("./textures/white.jpg");
 	
