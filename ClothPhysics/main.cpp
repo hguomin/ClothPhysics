@@ -25,8 +25,6 @@
 
 #include "GLError.h"
 
-/*https://www.youtube.com/watch?v=RqRxhY6iLto */
-
 #define DESIRED_FPS 120.0f
 #define MAX_PHYSICS_STEP 6
 #define MS_PER_SECOND 1000.0f
@@ -45,8 +43,6 @@ int main(int argc, char ** argv[])
 	Basic_Shader shader("./shaders/space");
 	Phong_Shader phong("./shaders/phong");
 	
-	Texture texture("./textures/white.jpg");
-	
 	glm::vec3 cameraStartPosition = glm::vec3(-1, 6, 8);
 	Camera camera(cameraStartPosition, 70.0f, display.GetAspectRation(), 0.01f, 1000.0f);
 	camera.SetForward(glm::vec3(0.1f, -0.4f, -0.9f));
@@ -58,11 +54,10 @@ int main(int argc, char ** argv[])
 	Transform transform;
 	Keyboard keyboard;
 	Mouse mouse;
-	check_gl_error();
+	
 	Cloth_CPU cloth(8, 8, 75, 75);
-	//Cloth_GPU gpuCloth;
 	Cloth_GPU cloth2;
-	check_gl_error();
+	
 
 	float counter = 0.0f;
 	Mesh monkey("./models/monkey3.obj");
@@ -75,7 +70,7 @@ int main(int argc, char ** argv[])
 	unsigned int iterations = 3;
 	bool cutOnce = false;
 	TwBar *myBar;
-	check_gl_error();
+	
 	myBar = TwNewBar("Hello!");
 	
 	TwAddVarRW(myBar, "Wind X", TW_TYPE_FLOAT, &windX, NULL);
@@ -93,7 +88,7 @@ int main(int argc, char ** argv[])
 	SDL_Event sdl_event;
 	int handled;
 	
-	check_gl_error();
+	
 	
 	while (!display.IsClosed())
 	{
@@ -234,9 +229,9 @@ int main(int argc, char ** argv[])
 				//cloth2.Split(5, glm::vec3(0, 0, -1));
 				cutOnce = true;
 			}
-			check_gl_error();
+			
 			cloth2.Draw(transform, camera);
-			check_gl_error();
+			
 			//Current bug. Splitting diagonaly should destroy shearing springs.Not at the moment
 		}
 		//TwDraw();
