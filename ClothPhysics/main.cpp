@@ -2,20 +2,20 @@
 #include <Windows.h>
 #include <GL\glew.h>
 #include <GL\freeglut.h>
-#include <AntTweakBar.h>
+//#include <AntTweakBar.h>
 
 #include "Display.h"
-#include "Basic_Shader.h"
-#include "Phong_Shader.h"
-#include "Mesh.h"
+//#include "Basic_Shader.h"
+//#include "Phong_Shader.h"
+//#include "Mesh.h"
 #include "Texture.h"
 #include "Transform.h"
 #include "Camera.h"
 #include "Keyboard.h"
 #include "Mouse.h"
 #include "Skybox.h"
-#include "GridMesh.h"
-#include "Cloth2.h"
+//#include "GridMesh.h"
+//#include "Cloth2.h"
 #include "Cloth_GPU.h"
 
 #include <iostream>
@@ -39,12 +39,6 @@ int main(int argc, char ** argv[])
 {
 	Display display(800, 600, "TSBK07 Space");
 	
-	TwInit(TW_OPENGL, NULL);
-	TwWindowSize(800, 600);
-	
-	Basic_Shader shader("./shaders/space");
-	Phong_Shader phong("./shaders/phong");
-	
 	Texture texture("./textures/white.jpg");
 	
 	glm::vec3 cameraStartPosition = glm::vec3(-1, 6, 8);
@@ -57,23 +51,18 @@ int main(int argc, char ** argv[])
 	Transform transform;
 	Keyboard keyboard;
 	Mouse mouse;
-	Cloth2 cloth(8, 8, 75, 75);
+	//Cloth2 cloth(8, 8, 75, 75);
 	Cloth_GPU cloth_gpu;
 	
-
 	float counter = 0.0f;
-	Mesh monkey("./models/monkey3.obj");
-	Mesh box("./models/box.obj");
-
-	std::cout << "init complete" << std::endl;
 
 	float previousTicks = (float)SDL_GetTicks();
-	
+
 	srand((unsigned int)time(NULL));
 
 	SDL_Event sdl_event;
-	int handled;
-	
+
+	std::cout << "init complete" << std::endl;
 	while (!display.IsClosed())
 	{
 		//time handling
@@ -86,17 +75,13 @@ int main(int argc, char ** argv[])
 
 		while (SDL_PollEvent(&sdl_event))
 		{
-			handled = TwEventSDL(&sdl_event, SDL_MAJOR_VERSION, SDL_MINOR_VERSION);
-			if (!handled)
+			if (sdl_event.type == SDL_QUIT)
 			{
-				if (sdl_event.type == SDL_QUIT)
-				{
-					display.HandleEvent(sdl_event);
-				}
-				if (sdl_event.type == SDL_MOUSEMOTION || sdl_event.type == SDL_MOUSEBUTTONDOWN || sdl_event.type == SDL_MOUSEBUTTONUP)
-				{
-					mouse.HandleEvent(sdl_event, camera);
-				}
+				display.HandleEvent(sdl_event);
+			}
+			if (sdl_event.type == SDL_MOUSEMOTION || sdl_event.type == SDL_MOUSEBUTTONDOWN || sdl_event.type == SDL_MOUSEBUTTONUP)
+			{
+				mouse.HandleEvent(sdl_event, camera);
 			}
 		}
 		
@@ -109,6 +94,5 @@ int main(int argc, char ** argv[])
 		
 		counter += 0.001f;
 	}
-	TwTerminate();
 	return 0;
 }
