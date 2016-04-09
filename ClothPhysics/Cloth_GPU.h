@@ -31,6 +31,20 @@ private:
 	void UpdateGPUAfterCut();
 	void massSpringShader_UploadData(glm::mat4 MVP);
 
+	bool isPointAbovePlane(glm::vec3 p1, glm::vec3 pointOnPlane, glm::vec3 planeNormal);
+
+	void FixSprings(vec& faces_above, vec& faces_below, int split_index);
+	void FixStructSprings(const vec& vertices_below, int split_index);
+	void FixShearSprings(const vec& vertices_below, int split_index);
+	void FixBendSprings(const vec& vertices_below, int split_index);
+	
+	glm::ivec4 SplitSpring(std::vector<glm::ivec4>& springs, trimesh::index_t split_index, vec indexes_to_remove_from_original);
+	
+	unsigned int getReverseDirection(unsigned int direction);
+	vec getCommonVertices(vec faces_above, vec faces_below);
+	vec getVertices(vec faces);
+	void fillTriangles(std::vector< trimesh::triangle_t>& triang);
+
 	Basic_Shader massSpringShader;
 	Phong_Shader renderShader;
 
@@ -45,6 +59,12 @@ private:
 		DOWN_LEFT = 2,
 		DOWN_RIGHT = 3,
 	};
+	enum SPRING
+	{
+		STRUCT,
+		SHEAR,
+		BEND
+	};
 
 	const int points_x = 75;
 	const int points_y = 75;
@@ -55,7 +75,6 @@ private:
 	const float hsize = sizeX / 2.0f;
 	const int NUM_ITER = 4;
 	bool bDisplayMasses = true;
-
 
 	std::vector<glm::vec4> X;		//current positions
 	std::vector<glm::vec4> X_last;	//previous positions
@@ -82,8 +101,6 @@ private:
 		float rest_bend;
 	} springData;
 
-	bool splitAdded = true;
-
 	float timeStep = 1.0f / 60.0f;
 
 	int texture_size_x = points_x;
@@ -102,22 +119,5 @@ private:
 	GLuint vaoUpdateID[2], vaoRenderID[2], vboID_Indices;
 	GLuint texPosID[2];
 	GLuint texPrePosID[2];
-
-	bool isPointAbovePlane(glm::vec3 p1, glm::vec3 pointOnPlane, glm::vec3 planeNormal);
-	enum SPRING
-	{
-		STRUCT,
-		SHEAR,
-		BEND
-	};
-	void FixSprings(vec& faces_above, vec& faces_below, int split_index);
-	void FixStructSprings(const vec& vertices_below, int split_index);
-	void FixShearSprings(const vec& vertices_below, int split_index);
-	void FixBendSprings(const vec& vertices_below, int split_index);
-	glm::ivec4 SplitSpring(std::vector<glm::ivec4>& springs, trimesh::index_t split_index, vec indexes_to_remove_from_original);
-	unsigned int getReverseDirection(unsigned int direction);
-	vec getCommonVertices(vec faces_above, vec faces_below);
-	vec getVertices(vec faces);
-	void fillTriangles(std::vector< trimesh::triangle_t>& triang);
 };
 
