@@ -11,11 +11,11 @@ Cloth_GPU::Cloth_GPU()
 	setupHEMesh();
 	setupSprings();
 	setupShaders();
-	check_gl_error();
+	
 	createVBO();
-	check_gl_error();
+	
 	setupTransformFeedback();
-	check_gl_error();
+	
 }
 
 
@@ -51,19 +51,19 @@ void Cloth_GPU::Draw(const Transform& transform, const Camera& camera)
 	
 	Simulate(mMVP);
 	
-	check_gl_error();
+	
 	glBindVertexArray(vaoRenderID[writeID]);
 	
 	glDisable(GL_CULL_FACE);
 	renderShader.Use();
-	check_gl_error();
+	
 	renderShader.UpdateValues(transform, camera);
-	check_gl_error();
+	
 	glDrawElements(GL_TRIANGLES, num_indices, GL_UNSIGNED_SHORT, 0);
 	renderShader.UnUse();
 	glEnable(GL_DEPTH_TEST);
 	glBindVertexArray(0);
-	check_gl_error();
+	
 }
 
 void Cloth_GPU::createVBO()
@@ -102,19 +102,19 @@ void Cloth_GPU::createVBO()
 		glBufferData(GL_ARRAY_BUFFER, maximum_split_points*sizeof(glm::ivec4), &struct_springs[0].x, GL_STATIC_READ);
 		glEnableVertexAttribArray(2);
 		glVertexAttribIPointer(2, 4, GL_INT,  0, 0);
-		check_gl_error();
+		
 
 		glBindBuffer(GL_ARRAY_BUFFER, vboID_Shear);
 		glBufferData(GL_ARRAY_BUFFER, maximum_split_points*sizeof(glm::ivec4), &shear_springs[0].x, GL_STATIC_READ);
 		glEnableVertexAttribArray(3);
 		glVertexAttribIPointer(3, 4, GL_INT,  0, 0);
-		check_gl_error();
+		
 
 		glBindBuffer(GL_ARRAY_BUFFER, vboID_Bend);
 		glBufferData(GL_ARRAY_BUFFER, maximum_split_points*sizeof(glm::ivec4), &bend_springs[0].x, GL_STATIC_READ);
 		glEnableVertexAttribArray(4);
 		glVertexAttribIPointer(4, 4, GL_INT, 0, 0);
-		check_gl_error();
+		
 
 		glBindBuffer(GL_ARRAY_BUFFER, vboID_Normal);
 		glBufferData(GL_ARRAY_BUFFER, maximum_split_points*sizeof(glm::vec3), nullptr, GL_STATIC_READ);
@@ -159,7 +159,7 @@ void Cloth_GPU::createVBO()
 	}
 	glBindVertexArray(0);
 
-	check_gl_error();
+	
 }
 
 void Cloth_GPU::setupTransformFeedback()
@@ -169,9 +169,9 @@ void Cloth_GPU::setupTransformFeedback()
 		"out_prev_position",
 		"out_vertexNormal"};
 	glTransformFeedbackVaryings(massSpringShader.getProgram(), 3, varying_names, GL_SEPARATE_ATTRIBS);
-	check_gl_error();
+	
 	glLinkProgram(massSpringShader.getProgram());
-	check_gl_error();
+	
 }
 
 void Cloth_GPU::Simulate(glm::mat4 MVP)
@@ -179,7 +179,7 @@ void Cloth_GPU::Simulate(glm::mat4 MVP)
 	massSpringShader.Use();
 	massSpringShader_UploadData(MVP);
 	
-	check_gl_error();
+	
 	for (int i = 0;i<NUM_ITER;i++) {
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_BUFFER, texPosID[readID]);
@@ -202,7 +202,7 @@ void Cloth_GPU::Simulate(glm::mat4 MVP)
 		glDrawArrays(GL_POINTS, 0, current_points);
 		glEndTransformFeedback();
 
-		check_gl_error();
+		
 		
 		glFlush();
 		glDisable(GL_RASTERIZER_DISCARD);
@@ -244,23 +244,23 @@ void Cloth_GPU::UpdateGPUAfterCut()
 	/*
 	for (size_t i = 0; i < 2; i++)
 	{
-		check_gl_error();
+		
 		glBindVertexArray(vaoUpdateID[readID]);
 		glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, vboID_Pos[i]);
 		HELPER::PushBufferData(GL_TRANSFORM_FEEDBACK_BUFFER, &X, X.size());
-		check_gl_error();
+		
 		glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 1, vboID_PrePos[i]);
 		HELPER::PushBufferData(GL_TRANSFORM_FEEDBACK_BUFFER, &X_last, X_last.size());
-		check_gl_error();
+		
 		glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 2, vboID_Struct);
 		HELPER::PushBufferData(GL_TRANSFORM_FEEDBACK_BUFFER, &struct_springs, struct_springs.size());
-		check_gl_error();
+		
 		glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 3, vboID_Shear);
 		HELPER::PushBufferData(GL_TRANSFORM_FEEDBACK_BUFFER, &shear_springs, shear_springs.size());
-		check_gl_error();
+		
 		glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 4, vboID_Bend);
 		HELPER::PushBufferData(GL_TRANSFORM_FEEDBACK_BUFFER, &bend_springs, bend_springs.size());
-		check_gl_error();
+		
 	}
 	
 	//HELPER::PushBufferData(GL_ELEMENT_ARRAY_BUFFER, &indices, indices.size());
@@ -290,7 +290,7 @@ void Cloth_GPU::massSpringShader_UploadData(glm::mat4 MVP)
 	glUniform3fv(massSpringShader("ball_position"),1, glm::value_ptr(ball_pos));
 	glUniform2f(massSpringShader("inv_cloth_size"), inv_cloth_size.x, inv_cloth_size.y);
 	glUniform2f(massSpringShader("step"), 1.0f / (texture_size_x - 1.0f), 1.0f / (texture_size_y - 1.0f));
-	check_gl_error();
+	
 }
 
 void Cloth_GPU::setupPositions()
@@ -351,9 +351,8 @@ void Cloth_GPU::setupShaders()
 {
 	massSpringShader.LoadFromFile(GL_VERTEX_SHADER, "shaders/Spring.vert");
 	massSpringShader.LoadFromFile(GL_GEOMETRY_SHADER, "shaders/Spring.geom");
+
 	
-	splitShader.LoadFromFile(GL_VERTEX_SHADER, "shaders/Split.vert");
-	check_gl_error();
 	massSpringShader.CreateAndLinkProgram();
 	
 	massSpringShader.Use();
@@ -583,7 +582,7 @@ void Cloth_GPU::Split(const unsigned int split_index, glm::vec3 planeNormal)
 	indices = m_he_mesh.get_indices();
 	num_indices = indices.size();
 
-	check_gl_error();
+	
 	UpdateGPUAfterCut();
 }
 

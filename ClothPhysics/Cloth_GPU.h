@@ -31,9 +31,7 @@ private:
 	void UpdateGPUAfterCut();
 	void massSpringShader_UploadData(glm::mat4 MVP);
 
-
 	Basic_Shader massSpringShader;
-	Basic_Shader splitShader;
 	Phong_Shader renderShader;
 
 	enum
@@ -48,8 +46,8 @@ private:
 		DOWN_RIGHT = 3,
 	};
 
-	const int points_x = 3;
-	const int points_y = 3;
+	const int points_x = 75;
+	const int points_y = 75;
 	int current_points = points_x*points_y;
 	int num_indices;
 	const int maximum_split_points = 3 * current_points;
@@ -98,12 +96,10 @@ private:
 	GLuint vboID_Pos[2];
 	GLuint vboID_PrePos[2];
 	GLuint vboID_Struct, vboID_Shear, vboID_Bend;
-
 	GLuint vboID_Normal;
 	GLuint vboID_TexCoord;
 
 	GLuint vaoUpdateID[2], vaoRenderID[2], vboID_Indices;
-	
 	GLuint texPosID[2];
 	GLuint texPrePosID[2];
 
