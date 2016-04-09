@@ -22,8 +22,6 @@ public:
 	float GetAspectRation() { return (float)m_width / (float)m_height; }
 
 	bool IsClosed() { return m_isClosed; }
-
-
 private:
 	SDL_Window* m_window;
 	SDL_GLContext m_glContext;

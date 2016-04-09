@@ -47,7 +47,6 @@ int main(int argc, char ** argv[])
 	Camera camera(cameraStartPosition, 70.0f, display.GetAspectRation(), 0.01f, 1000.0f);
 	camera.SetForward(glm::vec3(0.1f, -0.4f, -0.9f));
 	
-
 	Skybox sky;
 	sky.SkyboxInit("./textures/skybox/", "back.jpg", "front.jpg", "left.jpg", "right.jpg", "top.jpg", "bottom.jpg");
 	
@@ -57,7 +56,6 @@ int main(int argc, char ** argv[])
 	
 	Cloth_CPU cloth(8, 8, 75, 75);
 	Cloth_GPU cloth2;
-	
 
 	float counter = 0.0f;
 	Mesh monkey("./models/monkey3.obj");
@@ -78,7 +76,6 @@ int main(int argc, char ** argv[])
 	TwAddVarRW(myBar, "Wind Z", TW_TYPE_FLOAT, &windZ, NULL);
 	TwAddVarRW(myBar, "Iterations", TW_TYPE_UINT16, &iterations, NULL);
 	
-
 	std::cout << "init complete" << std::endl;
 
 	float previousTicks = (float)SDL_GetTicks();
@@ -87,8 +84,6 @@ int main(int argc, char ** argv[])
 
 	SDL_Event sdl_event;
 	int handled;
-	
-	
 	
 	while (!display.IsClosed())
 	{
@@ -100,7 +95,6 @@ int main(int argc, char ** argv[])
 
 		display.Clear(1, 1, 1, 1);
 
-		
 		while (SDL_PollEvent(&sdl_event))
 		{
 			handled = TwEventSDL(&sdl_event, SDL_MAJOR_VERSION, SDL_MINOR_VERSION);
@@ -194,15 +188,9 @@ int main(int argc, char ** argv[])
 
 			sky.Draw(transform, camera);
 
-			//shader.Use();
-			//shader.UpdateValues(transform, camera);
-
 			phong.Use();
 			phong.UpdateValues(transform, camera);
-			//phong.UnUse();
 
-			//texture.Use();
-			//monkey.Draw();
 			//Physics handling semi-fixed timestep
 			int physicSteps = 0;
 
@@ -229,15 +217,11 @@ int main(int argc, char ** argv[])
 				//cloth2.Split(5, glm::vec3(0, 0, -1));
 				cutOnce = true;
 			}
-			
 			cloth2.Draw(transform, camera);
 			
-			//Current bug. Splitting diagonaly should destroy shearing springs.Not at the moment
 		}
-		//TwDraw();
 		display.Update();
 		
-
 		counter += 0.001f;
 	}
 	TwTerminate();
