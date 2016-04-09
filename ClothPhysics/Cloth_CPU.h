@@ -11,11 +11,11 @@
 
 #define GRAVITY -0.0981f
 
-class Cloth2 : public GridMesh
+class Cloth_CPU : public GridMesh
 {
 public:
-	Cloth2(float width, float height, unsigned int particles_width, unsigned int particles_height);
-	~Cloth2();
+	Cloth_CPU(float width, float height, unsigned int particles_width, unsigned int particles_height);
+	~Cloth_CPU();
 
 	void Update(float dt, glm::vec3 wind, unsigned int numIterations);
 

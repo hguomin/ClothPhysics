@@ -15,9 +15,8 @@
 #include "Mouse.h"
 #include "Skybox.h"
 #include "GridMesh.h"
-#include "Cloth2.h"
+#include "Cloth_CPU.h"
 #include "Cloth_GPU.h"
-#include "Cloth_GPU2.h"
 
 #include <iostream>
 #include <algorithm>
@@ -38,7 +37,7 @@ bool GPU = true;
 
 int main(int argc, char ** argv[])
 {
-	Display display(800, 600, "TSBK07 Space");
+	Display display(800, 600, "TSBK03 Cloth Simulation");
 	
 	TwInit(TW_OPENGL, NULL);
 	TwWindowSize(800, 600);
@@ -60,9 +59,9 @@ int main(int argc, char ** argv[])
 	Keyboard keyboard;
 	Mouse mouse;
 	check_gl_error();
-	Cloth2 cloth(8, 8, 75, 75);
+	Cloth_CPU cloth(8, 8, 75, 75);
 	//Cloth_GPU gpuCloth;
-	Cloth_GPU2 cloth2;
+	Cloth_GPU cloth2;
 	check_gl_error();
 
 	float counter = 0.0f;
@@ -104,7 +103,7 @@ int main(int argc, char ** argv[])
 		previousTicks = currentTicks;
 		float totalDeltaTime = frameTime / DESIRED_FRAME_TIME;
 
-		display.Clear(0, 0, 0, 1);
+		display.Clear(1, 1, 1, 1);
 
 		
 		while (SDL_PollEvent(&sdl_event))
@@ -230,9 +229,9 @@ int main(int argc, char ** argv[])
 			//gpuCloth.Draw(transform, camera);
 			if (cutOnce == false)
 			{
-				cloth2.Split(4, glm::vec3(0, 0, -1));
-				cloth2.Split(3, glm::vec3(0, 0, -1));
-				cloth2.Split(5, glm::vec3(0, 0, -1));
+				//cloth2.Split(4, glm::vec3(0, 0, -1));
+				//cloth2.Split(3, glm::vec3(0, 0, -1));
+				//cloth2.Split(5, glm::vec3(0, 0, -1));
 				cutOnce = true;
 			}
 			check_gl_error();

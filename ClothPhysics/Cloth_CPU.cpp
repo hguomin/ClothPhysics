@@ -1,8 +1,8 @@
-#include "Cloth2.h"
+#include "Cloth_CPU.h"
 #include <iostream>
 #include <deque>
 
-Cloth2::Cloth2(float width, float height, unsigned int particles_width, unsigned int particles_height)
+Cloth_CPU::Cloth_CPU(float width, float height, unsigned int particles_width, unsigned int particles_height)
 	: GridMesh(particles_height, particles_width), m_width(width), m_height(height), m_particles_width(particles_width), m_particles_height(particles_height)
 {
 	for (unsigned int y = 0; y < particles_height; y++)
@@ -77,11 +77,11 @@ Cloth2::Cloth2(float width, float height, unsigned int particles_width, unsigned
 }
 
 
-Cloth2::~Cloth2()
+Cloth_CPU::~Cloth_CPU()
 {
 }
 
-void Cloth2::setStartPosition()
+void Cloth_CPU::setStartPosition()
 {
 	for (unsigned int y = 0; y < m_particles_height; y++)
 	{
@@ -99,17 +99,17 @@ void Cloth2::setStartPosition()
 	}
 }
 
-void Cloth2::makeConstraint(std::shared_ptr<Particle> p1, std::shared_ptr<Particle> p2, SpringType type)
+void Cloth_CPU::makeConstraint(std::shared_ptr<Particle> p1, std::shared_ptr<Particle> p2, SpringType type)
 {
 	m_constraints.push_back(std::make_shared<Spring>(p1, p2, type));
 }
 
-std::shared_ptr<Particle> Cloth2::getParticleAt(unsigned int x, unsigned int y)
+std::shared_ptr<Particle> Cloth_CPU::getParticleAt(unsigned int x, unsigned int y)
 {
 	return m_particles.at(x + m_particles_width*y);
 }
 
-std::vector<glm::vec3> Cloth2::ExtractPositions()
+std::vector<glm::vec3> Cloth_CPU::ExtractPositions()
 {
 	std::vector<glm::vec3> temp;
 
@@ -120,7 +120,7 @@ std::vector<glm::vec3> Cloth2::ExtractPositions()
 	return temp;
 }
 
-std::vector<glm::vec3> Cloth2::ExtractNormals()
+std::vector<glm::vec3> Cloth_CPU::ExtractNormals()
 {
 	std::vector<glm::vec3> temp;
 
@@ -131,7 +131,7 @@ std::vector<glm::vec3> Cloth2::ExtractNormals()
 	return temp;
 }
 
-void Cloth2::TimeStep(float dt, unsigned int numIterations)
+void Cloth_CPU::TimeStep(float dt, unsigned int numIterations)
 {
 	ForceConstraints(numIterations);
 	for (auto it = m_particles.cbegin(); it != m_particles.cend(); it++)
@@ -141,7 +141,7 @@ void Cloth2::TimeStep(float dt, unsigned int numIterations)
 	
 }
 
-void Cloth2::ForceConstraints(unsigned int numIterations)
+void Cloth_CPU::ForceConstraints(unsigned int numIterations)
 {
 	for (unsigned int i = 0; i < numIterations; i++) //number of times we want to iterate over the constraints
 	{
@@ -152,7 +152,7 @@ void Cloth2::ForceConstraints(unsigned int numIterations)
 	}
 }
 
-void Cloth2::AddForce(glm::vec3 &force)
+void Cloth_CPU::AddForce(glm::vec3 &force)
 {
 	for (auto it = m_particles.cbegin(); it < m_particles.cend(); it++)
 	{
@@ -160,7 +160,7 @@ void Cloth2::AddForce(glm::vec3 &force)
 	}
 }
 
-void Cloth2::Update(float dt, glm::vec3 wind, unsigned int numIterations)
+void Cloth_CPU::Update(float dt, glm::vec3 wind, unsigned int numIterations)
 {
 	AddForce(glm::vec3(0, GRAVITY, 0));
 	Wind(wind);
@@ -173,12 +173,12 @@ void Cloth2::Update(float dt, glm::vec3 wind, unsigned int numIterations)
 	GridMesh::UpdateNormals(ExtractNormals());
 }
 
-void Cloth2::print()
+void Cloth_CPU::print()
 {
 	
 }
 
-glm::vec3 Cloth2::CalculateTriangleNormal(std::shared_ptr<Particle> p1, std::shared_ptr<Particle> p2, std::shared_ptr<Particle> p3)
+glm::vec3 Cloth_CPU::CalculateTriangleNormal(std::shared_ptr<Particle> p1, std::shared_ptr<Particle> p2, std::shared_ptr<Particle> p3)
 {
 	glm::vec3 pos1 = *p1->GetPosition();
 	glm::vec3 pos2 = *p2->GetPosition();
@@ -192,7 +192,7 @@ glm::vec3 Cloth2::CalculateTriangleNormal(std::shared_ptr<Particle> p1, std::sha
 	return ret;
 }
 
-void Cloth2::AddWind(std::shared_ptr<Particle> p1, std::shared_ptr<Particle> p2, std::shared_ptr<Particle> p3, glm::vec3 direction)
+void Cloth_CPU::AddWind(std::shared_ptr<Particle> p1, std::shared_ptr<Particle> p2, std::shared_ptr<Particle> p3, glm::vec3 direction)
 {
 	glm::vec3 normal = CalculateTriangleNormal(p1, p2, p3);
 	glm::vec3 d = glm::normalize(normal);
@@ -202,7 +202,7 @@ void Cloth2::AddWind(std::shared_ptr<Particle> p1, std::shared_ptr<Particle> p2,
 	p3->addForce(force);
 }
 
-void Cloth2::Wind(glm::vec3 direction)
+void Cloth_CPU::Wind(glm::vec3 direction)
 {
 	for (unsigned int x = 0; x < m_particles_width -1; x++)
 	{
@@ -214,7 +214,7 @@ void Cloth2::Wind(glm::vec3 direction)
 	}
 }
 
-void Cloth2::BallCollision()
+void Cloth_CPU::BallCollision()
 {
 	for each (std::shared_ptr<Particle> particle in m_particles)
 	{
@@ -227,7 +227,7 @@ void Cloth2::BallCollision()
 	}
 }
 
-void Cloth2::CalculatePerVertexNormals()
+void Cloth_CPU::CalculatePerVertexNormals()
 {
 	//fixing  the top left corner
 	{
@@ -481,7 +481,7 @@ void Cloth2::CalculatePerVertexNormals()
 	
 }
 
-void Cloth2::UpdateTextureCoordinates()
+void Cloth_CPU::UpdateTextureCoordinates()
 {
 	//using a central difference approach we can find the acceleration of a particle and use the previous position and move the texture coordinate in that
 	//direction
@@ -508,7 +508,7 @@ void Cloth2::UpdateTextureCoordinates()
 	}
 }
 
-void Cloth2::Upload()
+void Cloth_CPU::Upload()
 {
 	GridMesh::UploadToGPU();
 }

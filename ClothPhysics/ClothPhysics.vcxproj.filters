@@ -57,9 +57,6 @@
     <ClCompile Include="GridMesh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Cloth2.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Particle.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -75,22 +72,22 @@
     <ClCompile Include="Shader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Cloth_GPU.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Spring_Shader.cpp">
       <Filter>Source Files\Different Shaders</Filter>
     </ClCompile>
     <ClCompile Include="TransformFeedback_Shader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Cloth_GPU2.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="GLError.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="trimesh.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Cloth_CPU.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Cloth_GPU.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -128,9 +125,6 @@
     <ClInclude Include="GridMesh.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Cloth2.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Spring.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -152,16 +146,10 @@
     <ClInclude Include="Shader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Cloth_GPU.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Spring_Shader.h">
       <Filter>Header Files\Different Shaders</Filter>
     </ClInclude>
     <ClInclude Include="TransformFeedback_Shader.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Cloth_GPU2.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GLError.h">
@@ -174,6 +162,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="trimesh_types.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Cloth_CPU.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Cloth_GPU.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

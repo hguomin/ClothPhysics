@@ -12,7 +12,7 @@ public:
 	~Display();
 
 	void Update();
-	void Clear(float red = 0.0f, float green = 0.0f, float blue = 0.0f, float alpha = 1.0f);
+	void Clear(float red = 1.0f, float green = 1.0f, float blue = 1.0f, float alpha = 1.0f);
 
 	void HandleEvent(SDL_Event& e);
 
