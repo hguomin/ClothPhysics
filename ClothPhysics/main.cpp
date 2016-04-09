@@ -17,7 +17,7 @@
 #include "GridMesh.h"
 #include "Cloth2.h"
 #include "Cloth_GPU.h"
-#include "Cloth_GPU2.h"
+//#include "Cloth_GPU2.h"
 
 #include <iostream>
 #include <algorithm>
@@ -62,7 +62,7 @@ int main(int argc, char ** argv[])
 	check_gl_error();
 	Cloth2 cloth(8, 8, 75, 75);
 	//Cloth_GPU gpuCloth;
-	Cloth_GPU2 cloth2;
+	Cloth_GPU cloth_gpu;
 	check_gl_error();
 
 	float counter = 0.0f;
@@ -230,13 +230,13 @@ int main(int argc, char ** argv[])
 			//gpuCloth.Draw(transform, camera);
 			if (cutOnce == false)
 			{
-				cloth2.Split(4, glm::vec3(0, 0, -1));
-				cloth2.Split(3, glm::vec3(0, 0, -1));
-				cloth2.Split(5, glm::vec3(0, 0, -1));
+				cloth_gpu.Split(4, glm::vec3(0, 0, -1));
+				cloth_gpu.Split(3, glm::vec3(0, 0, -1));
+				cloth_gpu.Split(5, glm::vec3(0, 0, -1));
 				cutOnce = true;
 			}
 			check_gl_error();
-			cloth2.Draw(transform, camera);
+			cloth_gpu.Draw(transform, camera);
 			check_gl_error();
 			//Current bug. Splitting diagonaly should destroy shearing springs.Not at the moment
 		}
