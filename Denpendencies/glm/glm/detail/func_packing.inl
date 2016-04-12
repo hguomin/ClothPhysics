@@ -35,9 +35,7 @@ namespace glm
 	GLM_FUNC_QUALIFIER uint packUnorm2x16(vec2 const & v)
 	{
 		u16vec2 Topack(round(clamp(v, 0.0f, 1.0f) * 65535.0f));
-		// return reinterpret_cast<uint&>(Topack);
-    uint* ptr(reinterpret_cast<uint*>(&Topack));
-    return *ptr;
+		return reinterpret_cast<uint&>(Topack);
 	}
 
 	GLM_FUNC_QUALIFIER vec2 unpackUnorm2x16(uint const & p)
@@ -49,9 +47,7 @@ namespace glm
 	GLM_FUNC_QUALIFIER uint packSnorm2x16(vec2 const & v)
 	{
 		i16vec2 Topack(round(clamp(v ,-1.0f, 1.0f) * 32767.0f));
-		// return reinterpret_cast<uint32&>(Topack);
-    uint* ptr(reinterpret_cast<uint*>(&Topack));
-    return *ptr;
+		return reinterpret_cast<uint32&>(Topack);
 	}
 
 	GLM_FUNC_QUALIFIER vec2 unpackSnorm2x16(uint const & p)

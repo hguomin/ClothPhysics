@@ -255,7 +255,7 @@ namespace detail
 	template <typename T, precision P>
 	struct compute_dot<tquat, T, P>
 	{
-		static GLM_FUNC_QUALIFIER T call(tquat<T, P> const & x, tquat<T, P> const & y)
+		static T call(tquat<T, P> const & x, tquat<T, P> const & y)
 		{
 			tvec4<T, P> tmp(x.x * y.x, x.y * y.y, x.z * y.z, x.w * y.w);
 			return (tmp.x + tmp.y) + (tmp.z + tmp.w);
@@ -302,11 +302,16 @@ namespace detail
 		detail::tvec3<T, P> const & v
 	)
 	{
-		detail::tvec3<T, P> const QuatVector(q.x, q.y, q.z);
-		detail::tvec3<T, P> const uv(glm::cross(QuatVector, v));
-		detail::tvec3<T, P> const uuv(glm::cross(QuatVector, uv));
+		T Two(2);
 
-		return v + ((uv * q.w) + uuv) * static_cast<T>(2);
+		detail::tvec3<T, P> uv, uuv;
+		detail::tvec3<T, P> QuatVector(q.x, q.y, q.z);
+		uv = glm::cross(QuatVector, v);
+		uuv = glm::cross(QuatVector, uv);
+		uv *= (Two * q.w);
+		uuv *= Two;
+
+		return v + uv + uuv;
 	}
 
 	template <typename T, precision P>
@@ -582,10 +587,10 @@ namespace detail
 		{
 			// Linear interpolation
 			return detail::tquat<T, P>(
-				mix(x.w, z.w, a),
-				mix(x.x, z.x, a),
-				mix(x.y, z.y, a),
-				mix(x.z, z.z, a));
+				mix(x.w, y.w, a),
+				mix(x.x, y.x, a),
+				mix(x.y, y.y, a),
+				mix(x.z, y.z, a));
 		}
 		else
 		{

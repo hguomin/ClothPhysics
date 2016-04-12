@@ -82,8 +82,11 @@ private:
 	std::vector<glm::vec2> Tex_coord;
 	std::vector<GLushort> indices;
 	std::vector<glm::ivec4> struct_springs;
+	std::vector<glm::ivec4> extra_struct_springs;
 	std::vector<glm::ivec4> shear_springs;
+	std::vector<glm::ivec4> extra_shear_springs;
 	std::vector<glm::ivec4> bend_springs;
+	std::vector<glm::ivec4> extra_bend_springs;
 
 	trimesh::trimesh_t m_he_mesh;
 
@@ -113,6 +116,7 @@ private:
 	GLuint vboID_Pos[2];
 	GLuint vboID_PrePos[2];
 	GLuint vboID_Struct, vboID_Shear, vboID_Bend;
+	GLuint vboID_Extra_Struct, vboID_Extra_Shear, vboID_Extra_Bend;
 	GLuint vboID_Normal;
 	GLuint vboID_TexCoord;
 

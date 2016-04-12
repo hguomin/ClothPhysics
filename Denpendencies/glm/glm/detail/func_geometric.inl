@@ -92,7 +92,8 @@ namespace detail
 	{
 		GLM_STATIC_ASSERT(std::numeric_limits<genType>::is_iec559, "'length' only accept floating-point inputs");
 
-		return abs(x);
+		genType sqr = x * x;
+		return sqrt(sqr);
 	}
 
 	template <typename T, precision P>
